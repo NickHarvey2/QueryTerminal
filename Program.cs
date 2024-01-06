@@ -21,9 +21,11 @@ class Program
 
         // Command handlers
         services.AddKeyedTransient<ProvideHandler>("mssql", (serviceProvider,serviceKey) => connectionString => new SqlHandler(connectionString, serviceProvider));
+        services.AddKeyedTransient<ProvideHandler>("sqlite", (serviceProvider,serviceKey) => connectionString => new SqliteHandler(connectionString, serviceProvider));
 
         // Runners
         services.AddKeyedTransient<RunHandler>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
+        services.AddKeyedTransient<RunHandler>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
 
         // Connection providers
         services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
