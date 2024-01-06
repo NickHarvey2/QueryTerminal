@@ -9,7 +9,7 @@ namespace QueryTerminal.CommandHandling;
 public abstract class BaseHandler
 {
     protected IServiceProvider _serviceProvider;
-    protected string _connectionString;
+    protected string? _connectionString;
     protected IOutputFormatter _outputFormatter;
 
     public void SetOutputFormat(string outputFormat)

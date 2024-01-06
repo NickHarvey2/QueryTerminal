@@ -53,37 +53,44 @@ class Program
         var serviceProvider = services.BuildServiceProvider();
 
         // Configure command and options
-        var rootCommand = new RootCommand("Connect and run commands against SQL Server");
+        var rootCommand = new RootCommand("Connect and run commands against databases");
+
+        var databaseTypeOption = new Option<string>(
+            name: "--type",
+            description: "The type of database to connect to. Supported values are 'mssql' for Microsoft SQL Server and 'sqlite' for SQLite."
+        );
+        databaseTypeOption.AddAlias("-t");
+        rootCommand.AddOption(databaseTypeOption);
 
         var connectionStringOption = new Option<string?>(
-                name: "--connectionString",
-                description: "The connection string used to connect to the SQL server."
+            name: "--connectionString",
+            description: "The connection string used to connect to the database."
         );
         connectionStringOption.AddAlias("-c");
         rootCommand.AddOption(connectionStringOption);
 
         var sqlQueryOption = new Option<string?>(
-                name: "--query",
-                description: "The SQL query to run. When using this option, the command is immediately run, output is sent to stdout, and the application terminates. Omitting this option launches REPL mode."
+            name: "--query",
+            description: "The query to run. When using this option, the command is immediately run, output is sent to stdout, and the application terminates. Omitting this option launches REPL mode."
         );
         sqlQueryOption.AddAlias("-q");
         rootCommand.AddOption(sqlQueryOption);
 
         var outputFormatOption = new Option<string>(
-                name: "--outputFormat",
-                description: "The format to use to output data",
-                getDefaultValue: () => "csv"
+            name: "--outputFormat",
+            description: "The format to use to output data",
+            getDefaultValue: () => "csv"
         );
         outputFormatOption.AddAlias("-o");
         rootCommand.AddOption(outputFormatOption);
 
-        rootCommand.SetHandler<string,string,string>(async (cancellationToken, serviceProvider, connectionString, sqlQuery, outputFormat) => {
-            var provideHandler = serviceProvider.GetRequiredKeyedService<ProvideHandler>("mssql");
+        rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormat) => {
+            var provideHandler = serviceProvider.GetRequiredKeyedService<ProvideHandler>(dbType);
             var handler = provideHandler(connectionString);
             handler.SetOutputFormat(outputFormat);
-            var runHandler = serviceProvider.GetRequiredKeyedService<RunHandler>("mssql");
+            var runHandler = serviceProvider.GetRequiredKeyedService<RunHandler>(dbType);
             await runHandler(handler, sqlQuery, cancellationToken);
-        }, serviceProvider, connectionStringOption, sqlQueryOption, outputFormatOption);
+        }, serviceProvider, databaseTypeOption, connectionStringOption, sqlQueryOption, outputFormatOption);
 
         // Execution and error handling
         try {
