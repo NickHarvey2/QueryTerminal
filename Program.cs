@@ -68,8 +68,7 @@ class Program
         rootCommand.AddOption(outputFormatOption);
 
         rootCommand.SetHandler<string,string,string>(async (cancellationToken, serviceProvider, connectionString, sqlQuery, outputFormat) => {
-            // TODO handle other connection types
-            var handler = new RootCommandHandler<SqlConnection>(connectionString, serviceProvider);
+            BaseCommandHandler<SqlConnection> handler = new SqlCommandHandler(connectionString, serviceProvider);
             handler.SetOutputFormat(outputFormat);
             await handler.Run(sqlQuery, cancellationToken);
         }, serviceProvider, connectionStringOption, sqlQueryOption, outputFormatOption);

@@ -6,11 +6,14 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class RootCommandHandler<TConnection> where TConnection : IDbConnection
+public abstract class BaseCommandHandler<TConnection> where TConnection : IDbConnection
 {
-    private readonly string _connectionString;
-    private IOutputFormatter _outputFormatter;
-    private readonly IServiceProvider _serviceProvider;
+    protected IServiceProvider _serviceProvider;
+    protected string _connectionString;
+    protected IOutputFormatter _outputFormatter;
+
+    public abstract TConnection Connect(string connectionString);
+    public abstract IQueryExecutor<TConnection> QueryExecutor { get; }
 
     public void SetOutputFormat(string outputFormat)
     {
@@ -24,22 +27,10 @@ public class RootCommandHandler<TConnection> where TConnection : IDbConnection
         }
     }
 
-    public RootCommandHandler(string? connectionString, IServiceProvider serviceProvider)
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            throw new ArgumentNullException("connectionString");
-        }
-        _connectionString = connectionString;
-        _serviceProvider = serviceProvider;
-        SetOutputFormat("csv");
-    }
-
     public async Task Run(string? sqlQuery, CancellationToken cancellationToken)
     {
-        using var conn = _serviceProvider.GetRequiredService<IDbConnectionProvider<TConnection>>().Connect(_connectionString);
+        using var conn = Connect(_connectionString);
         conn.Open();
-        var executor = _serviceProvider.GetRequiredService<IQueryExecutor<TConnection>>();
 
         if (string.IsNullOrWhiteSpace(sqlQuery))
         {
@@ -54,14 +45,15 @@ public class RootCommandHandler<TConnection> where TConnection : IDbConnection
                         break;
                     }
                 }
-                using var reader = await executor.Execute(conn, sqlQuery, cancellationToken);
+                using var reader = await QueryExecutor.Execute(conn, sqlQuery, cancellationToken);
                 _outputFormatter.WriteOutput(reader);
             }
         }
         else
         {
-            using var reader = await executor.Execute(conn, sqlQuery, cancellationToken);
+            using var reader = await QueryExecutor.Execute(conn, sqlQuery, cancellationToken);
             _outputFormatter.WriteOutput(reader);
         }
     }
 }
+
