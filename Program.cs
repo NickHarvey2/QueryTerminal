@@ -3,6 +3,10 @@ using Microsoft.Data.SqlClient;
 using QueryTerminal.CommandHandling;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.OutputFormatting;
+using Spectre.Console;
+using Microsoft.Data.Sqlite;
+using QueryTerminal.Data;
+using System.Data;
 
 namespace QueryTerminal;
 
@@ -12,30 +16,35 @@ class Program
     {
         // configure service collection
         var services = new ServiceCollection();
-        
+
+        // Connection providers
+        services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
+        services.AddTransient<IDbConnectionProvider<SqliteConnection>, SqliteConnectionProvider>();
+
         // Query executors
         services.AddTransient<IQueryExecutor<SqlConnection>, SqlQueryExecutor>();
-        
+        services.AddTransient<IQueryExecutor<SqliteConnection>, SqliteQueryExecutor>();
+
         // Output formatters
-        services.AddKeyedTransient<IOutputFormatter>("csv", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
-        services.AddKeyedTransient<IOutputFormatter>("csv-headers", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
+        services.AddKeyedTransient<IOutputFormatter>("csv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
+        services.AddKeyedTransient<IOutputFormatter>("csv-headers",   (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
         services.AddKeyedTransient<IOutputFormatter>("csv-noheaders", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: false));
-        services.AddKeyedTransient<IOutputFormatter>("tsv", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: true));
-        services.AddKeyedTransient<IOutputFormatter>("tsv-headers", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: true));
+        services.AddKeyedTransient<IOutputFormatter>("tsv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: true));
+        services.AddKeyedTransient<IOutputFormatter>("tsv-headers",   (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: true));
         services.AddKeyedTransient<IOutputFormatter>("tsv-noheaders", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: false));
-        services.AddKeyedTransient<IOutputFormatter>("json", (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: false));
+        services.AddKeyedTransient<IOutputFormatter>("json",          (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: false));
         services.AddKeyedTransient<IOutputFormatter>("json-minified", (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: false));
-        services.AddKeyedTransient<IOutputFormatter>("json-pretty", (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: true));
-        services.AddKeyedTransient<IOutputFormatter>("yaml", (serviceProvider,serviceKey) => new YamlOutputFormatter());
-        services.AddKeyedTransient<IOutputFormatter>("table", (serviceProvider,serviceKey) => new TableOutputFormatter(border: "square"));
-        services.AddKeyedTransient<IOutputFormatter>("md", (serviceProvider,serviceKey) => new TableOutputFormatter(border: "markdown"));
-        services.AddKeyedTransient<IOutputFormatter>("markdown", (serviceProvider,serviceKey) => new TableOutputFormatter(border: "markdown"));
+        services.AddKeyedTransient<IOutputFormatter>("json-pretty",   (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: true));
+        services.AddKeyedTransient<IOutputFormatter>("yaml",          (serviceProvider,serviceKey) => new YamlOutputFormatter());
+        services.AddKeyedTransient<IOutputFormatter>("table",         (serviceProvider,serviceKey) => new TableOutputFormatter(border: "square"));
+        services.AddKeyedTransient<IOutputFormatter>("md",            (serviceProvider,serviceKey) => new TableOutputFormatter(border: "markdown"));
+        services.AddKeyedTransient<IOutputFormatter>("markdown",      (serviceProvider,serviceKey) => new TableOutputFormatter(border: "markdown"));
 
         var serviceProvider = services.BuildServiceProvider();
 
         // Configure command and options
         var rootCommand = new RootCommand("Connect and run commands against SQL Server");
-        
+
         var connectionStringOption = new Option<string?>(
                 name: "--connectionString",
                 description: "The connection string used to connect to the SQL server."
@@ -60,10 +69,8 @@ class Program
 
         rootCommand.SetHandler<string,string,string>(async (cancellationToken, serviceProvider, connectionString, sqlQuery, outputFormat) => {
             // TODO handle other connection types
-            // possibly bad idea:
-            //      allow dynamic specification of a DLL containing an acceptable implementation
-            //      of IDbConnection and IQeuryExecutor<{concrete impl of IDbConnection}>
-            var handler = new RootCommandHandler<SqlConnection>(connectionString, outputFormat, serviceProvider);
+            var handler = new RootCommandHandler<SqlConnection>(connectionString, serviceProvider);
+            handler.SetOutputFormat(outputFormat);
             await handler.Run(sqlQuery, cancellationToken);
         }, serviceProvider, connectionStringOption, sqlQueryOption, outputFormatOption);
 
@@ -78,12 +85,12 @@ class Program
         }
         catch (ArgumentException e)
         {
-            Console.Error.WriteLine(e.Message);
+            AnsiConsole.WriteException(e);
             return 1;
         }
         catch (Exception e)
         {
-            Console.Error.WriteLine($"Command terminated abnormally: {e.Message}");
+            AnsiConsole.WriteException(e);
             return 1;
         }
 

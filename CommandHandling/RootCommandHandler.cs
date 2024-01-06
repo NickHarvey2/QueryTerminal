@@ -1,17 +1,30 @@
 using System.Data;
 using Microsoft.Extensions.DependencyInjection;
+using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
 using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class RootCommandHandler<TConnection> where TConnection : IDbConnection, new()
+public class RootCommandHandler<TConnection> where TConnection : IDbConnection
 {
     private readonly string _connectionString;
     private IOutputFormatter _outputFormatter;
     private readonly IServiceProvider _serviceProvider;
 
-    public RootCommandHandler(string? connectionString, string outputFormat, IServiceProvider serviceProvider)
+    public void SetOutputFormat(string outputFormat)
+    {
+        try
+        {
+            _outputFormatter = _serviceProvider.GetRequiredKeyedService<IOutputFormatter>(outputFormat);
+        }
+        catch (InvalidOperationException ioe)
+        {
+            throw new InvalidOperationException($"No output formatter found for key '{outputFormat}'", ioe);
+        }
+    }
+
+    public RootCommandHandler(string? connectionString, IServiceProvider serviceProvider)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -19,13 +32,12 @@ public class RootCommandHandler<TConnection> where TConnection : IDbConnection, 
         }
         _connectionString = connectionString;
         _serviceProvider = serviceProvider;
-        _outputFormatter = _serviceProvider.GetRequiredKeyedService<IOutputFormatter>(outputFormat);
+        SetOutputFormat("csv");
     }
 
     public async Task Run(string? sqlQuery, CancellationToken cancellationToken)
     {
-        using TConnection conn = new TConnection();
-        conn.ConnectionString = _connectionString;
+        using var conn = _serviceProvider.GetRequiredService<IDbConnectionProvider<TConnection>>().Connect(_connectionString);
         conn.Open();
         var executor = _serviceProvider.GetRequiredService<IQueryExecutor<TConnection>>();
 

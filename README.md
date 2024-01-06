@@ -18,6 +18,9 @@ Options:
 ```
 
 ## TODO
+- unit tests
+- SQLite engine
+    - Loading Extensions, in particular to enable use of SteamPipe modules that can be loaded as SQLite extensions providing virtual tables
 - dot commands
     - .listTables
     - .listColumns {table}
@@ -36,4 +39,4 @@ Options:
     - completion
     - multi line mode
     - command history
-- unit tests
+- Multiple named connections, allowing joins across connections

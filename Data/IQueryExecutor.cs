@@ -1,6 +1,6 @@
 using System.Data;
 
-namespace QueryTerminal.CommandHandling;
+namespace QueryTerminal.Data;
 
 public interface IQueryExecutor<TConnection> where TConnection : IDbConnection
 {

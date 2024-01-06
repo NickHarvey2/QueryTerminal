@@ -1,7 +1,7 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 
-namespace QueryTerminal.CommandHandling;
+namespace QueryTerminal.Data;
 
 public class SqlQueryExecutor : IQueryExecutor<SqlConnection>
 {
