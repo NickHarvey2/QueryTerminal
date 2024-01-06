@@ -6,16 +6,24 @@ using QueryTerminal.OutputFormatting;
 using Spectre.Console;
 using Microsoft.Data.Sqlite;
 using QueryTerminal.Data;
-using System.Data;
 
 namespace QueryTerminal;
 
 class Program
 {
+    private delegate BaseCommandHandler ProvideHandler(string connectionString);
+    private delegate Task RunHandler(BaseCommandHandler handler, string sqlQuery, CancellationToken cancellationToken);
+
     static async Task<int> Main(string[] args)
     {
         // configure service collection
         var services = new ServiceCollection();
+
+        // Command handlers
+        services.AddKeyedTransient<ProvideHandler>("mssql", (serviceProvider,serviceKey) => connectionString => new SqlCommandHandler(connectionString, serviceProvider));
+
+        // Runners
+        services.AddKeyedTransient<RunHandler>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
 
         // Connection providers
         services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
@@ -68,9 +76,11 @@ class Program
         rootCommand.AddOption(outputFormatOption);
 
         rootCommand.SetHandler<string,string,string>(async (cancellationToken, serviceProvider, connectionString, sqlQuery, outputFormat) => {
-            BaseCommandHandler<SqlConnection> handler = new SqlCommandHandler(connectionString, serviceProvider);
+            var provideHandler = serviceProvider.GetRequiredKeyedService<ProvideHandler>("mssql");
+            var handler = provideHandler(connectionString);
             handler.SetOutputFormat(outputFormat);
-            await handler.Run(sqlQuery, cancellationToken);
+            var runHandler = serviceProvider.GetRequiredKeyedService<RunHandler>("mssql");
+            await runHandler(handler, sqlQuery, cancellationToken);
         }, serviceProvider, connectionStringOption, sqlQueryOption, outputFormatOption);
 
         // Execution and error handling

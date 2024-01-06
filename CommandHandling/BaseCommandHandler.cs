@@ -6,14 +6,11 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public abstract class BaseCommandHandler<TConnection> where TConnection : IDbConnection
+public abstract class BaseCommandHandler
 {
     protected IServiceProvider _serviceProvider;
     protected string _connectionString;
     protected IOutputFormatter _outputFormatter;
-
-    public abstract TConnection Connect(string connectionString);
-    public abstract IQueryExecutor<TConnection> QueryExecutor { get; }
 
     public void SetOutputFormat(string outputFormat)
     {
@@ -27,10 +24,10 @@ public abstract class BaseCommandHandler<TConnection> where TConnection : IDbCon
         }
     }
 
-    public async Task Run(string? sqlQuery, CancellationToken cancellationToken)
+    public async Task Run<TConnection>(string? sqlQuery, CancellationToken cancellationToken) where TConnection : IDbConnection
     {
-        using var conn = Connect(_connectionString);
-        conn.Open();
+        using var executor = _serviceProvider.GetRequiredService<IQueryExecutor<TConnection>>();
+        executor.Connect(_connectionString);
 
         if (string.IsNullOrWhiteSpace(sqlQuery))
         {
@@ -45,13 +42,13 @@ public abstract class BaseCommandHandler<TConnection> where TConnection : IDbCon
                         break;
                     }
                 }
-                using var reader = await QueryExecutor.Execute(conn, sqlQuery, cancellationToken);
+                using var reader = await executor.Execute(sqlQuery, cancellationToken);
                 _outputFormatter.WriteOutput(reader);
             }
         }
         else
         {
-            using var reader = await QueryExecutor.Execute(conn, sqlQuery, cancellationToken);
+            using var reader = await executor.Execute(sqlQuery, cancellationToken);
             _outputFormatter.WriteOutput(reader);
         }
     }

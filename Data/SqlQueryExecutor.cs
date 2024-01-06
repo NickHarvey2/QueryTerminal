@@ -5,10 +5,29 @@ namespace QueryTerminal.Data;
 
 public class SqlQueryExecutor : IQueryExecutor<SqlConnection>
 {
-    public async Task<IDataReader> Execute(SqlConnection conn, string sqlQuery, CancellationToken cancellationToken)
+    private readonly IDbConnectionProvider<SqlConnection> _connectionProvider;
+    private SqlConnection _connection;
+
+    public SqlQueryExecutor(IDbConnectionProvider<SqlConnection> dbConnectionProvider)
     {
-        var cmd = conn.CreateCommand();
+        _connectionProvider = dbConnectionProvider;
+    }
+
+    public void Connect(string connectionString)
+    {
+        _connection = _connectionProvider.Connect(connectionString);
+        _connection.Open();
+    }
+
+    public async Task<IDataReader> Execute(string sqlQuery, CancellationToken cancellationToken)
+    {
+        var cmd = _connection.CreateCommand();
         cmd.CommandText = sqlQuery;
         return await cmd.ExecuteReaderAsync(cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        _connection.Dispose();
     }
 }
