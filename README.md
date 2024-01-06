@@ -8,13 +8,12 @@ Usage:
   QueryTerminal [options]
 
 Options:
-  -c, --connectionString <connectionString>  The connection string used to connect to the SQL server.
-  -q, --query <query>                        The SQL query to run. When using this option, the command is immediately run,
-                                             output is sent to stdout, and the application terminates. 
-                                             Omitting this option launches REPL mode.
+  -t, --type <type>                          The type of database to connect to. Supported values are 'mssql' for Microsoft SQL Server and 'sqlite' for SQLite.
+  -c, --connectionString <connectionString>  The connection string used to connect to the database.
+  -q, --query <query>                        The query to run. When using this option, the command is immediately run, output is sent to stdout, and the application terminates. Omitting this option launches REPL mode.
   -o, --outputFormat <outputFormat>          The format to use to output data [default: csv]
   --version                                  Show version information
-  -?, -h, --help                             Show help and usage information
+  -?, -h, --help                             Show help and usage information -?, -h, --help                             Show help and usage information
 ```
 
 ## TODO
