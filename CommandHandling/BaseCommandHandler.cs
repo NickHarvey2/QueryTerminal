@@ -6,7 +6,7 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public abstract class BaseCommandHandler
+public abstract class BaseHandler
 {
     protected IServiceProvider _serviceProvider;
     protected string _connectionString;

@@ -1,8 +1,8 @@
 namespace QueryTerminal.CommandHandling;
 
-public class SqlCommandHandler : BaseCommandHandler
+public class SqlHandler : BaseHandler
 {
-    public SqlCommandHandler(string? connectionString, IServiceProvider serviceProvider)
+    public SqlHandler(string? connectionString, IServiceProvider serviceProvider)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
         {

@@ -11,8 +11,8 @@ namespace QueryTerminal;
 
 class Program
 {
-    private delegate BaseCommandHandler ProvideHandler(string connectionString);
-    private delegate Task RunHandler(BaseCommandHandler handler, string sqlQuery, CancellationToken cancellationToken);
+    private delegate BaseHandler ProvideHandler(string connectionString);
+    private delegate Task RunHandler(BaseHandler handler, string sqlQuery, CancellationToken cancellationToken);
 
     static async Task<int> Main(string[] args)
     {
@@ -20,7 +20,7 @@ class Program
         var services = new ServiceCollection();
 
         // Command handlers
-        services.AddKeyedTransient<ProvideHandler>("mssql", (serviceProvider,serviceKey) => connectionString => new SqlCommandHandler(connectionString, serviceProvider));
+        services.AddKeyedTransient<ProvideHandler>("mssql", (serviceProvider,serviceKey) => connectionString => new SqlHandler(connectionString, serviceProvider));
 
         // Runners
         services.AddKeyedTransient<RunHandler>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
