@@ -28,6 +28,6 @@ public class SqliteQueryExecutor : IQueryExecutor<SqliteConnection>
 
     public void Dispose()
     {
-        _connection.Dispose();
+        _connection?.Dispose();
     }
 }

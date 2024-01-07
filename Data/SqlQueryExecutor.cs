@@ -28,6 +28,6 @@ public class SqlQueryExecutor : IQueryExecutor<SqlConnection>
 
     public void Dispose()
     {
-        _connection.Dispose();
+        _connection?.Dispose();
     }
 }
