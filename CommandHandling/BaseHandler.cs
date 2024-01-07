@@ -6,11 +6,18 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public abstract class BaseHandler
+public class RootCommandHandler
 {
     protected IServiceProvider _serviceProvider;
     protected string? _connectionString;
     protected IOutputFormatter _outputFormatter;
+
+    public RootCommandHandler(string? connectionString, IServiceProvider serviceProvider)
+    {
+        _connectionString = connectionString;
+        _serviceProvider = serviceProvider;
+        SetOutputFormat("csv");
+    }
 
     public void SetOutputFormat(string outputFormat)
     {

@@ -11,17 +11,12 @@ namespace QueryTerminal;
 
 class Program
 {
-    private delegate BaseHandler ProvideHandler(string connectionString);
-    private delegate Task RunHandler(BaseHandler handler, string sqlQuery, CancellationToken cancellationToken);
+    private delegate Task RunHandler(RootCommandHandler handler, string sqlQuery, CancellationToken cancellationToken);
 
     static async Task<int> Main(string[] args)
     {
         // configure service collection
         var services = new ServiceCollection();
-
-        // Command handlers
-        services.AddKeyedTransient<ProvideHandler>("mssql", (serviceProvider,serviceKey) => connectionString => new SqlHandler(connectionString, serviceProvider));
-        services.AddKeyedTransient<ProvideHandler>("sqlite", (serviceProvider,serviceKey) => connectionString => new SqliteHandler(connectionString, serviceProvider));
 
         // Runners
         services.AddKeyedTransient<RunHandler>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
@@ -85,8 +80,7 @@ class Program
         rootCommand.AddOption(outputFormatOption);
 
         rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormat) => {
-            var provideHandler = serviceProvider.GetRequiredKeyedService<ProvideHandler>(dbType);
-            var handler = provideHandler(connectionString);
+            var handler = new RootCommandHandler(connectionString, serviceProvider);
             handler.SetOutputFormat(outputFormat);
             var runHandler = serviceProvider.GetRequiredKeyedService<RunHandler>(dbType);
             await runHandler(handler, sqlQuery, cancellationToken);
