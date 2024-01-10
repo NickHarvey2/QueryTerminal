@@ -26,10 +26,6 @@ class Program
         services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
         services.AddTransient<IDbConnectionProvider<SqliteConnection>, SqliteConnectionProvider>();
 
-        // Query executors
-        services.AddTransient<IQueryExecutor<SqlConnection>, SqlQueryExecutor>();
-        services.AddTransient<IQueryExecutor<SqliteConnection>, SqliteQueryExecutor>();
-
         // Output formatters
         services.AddKeyedTransient<IOutputFormatter>("csv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
         services.AddKeyedTransient<IOutputFormatter>("csv-headers",   (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
