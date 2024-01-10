@@ -13,7 +13,7 @@ public class RootCommandHandler
     private string? _connectionString;
     private IOutputFormatter _outputFormatter;
     private bool _terminate = false;
-    private IDictionary<string, Func<string[],Task>> _dotCommands;
+    private IDictionary<string, Func<string[], CancellationToken, Task>> _dotCommands;
 
     public RootCommandHandler(string? connectionString, IServiceProvider serviceProvider)
     {
@@ -54,11 +54,11 @@ public class RootCommandHandler
                 {
                     if (commandText.StartsWith("."))
                     {
-                        await HandleDotCommand(connection, commandText);
+                        await HandleDotCommand(connection, commandText, cancellationToken);
                     }
                     else
                     {
-                        await HandleSqlCommand(connection, commandText);
+                        await HandleSqlCommand(connection, commandText, cancellationToken);
                     }
                 }
                 catch (Exception e)
@@ -69,34 +69,34 @@ public class RootCommandHandler
         }
         else
         {
-            await HandleSqlCommand(connection, commandText);
+            await HandleSqlCommand(connection, commandText, cancellationToken);
         }
     }
 
-    private async Task HandleDotCommand(DbConnection connection, string commandText)
+    private async Task HandleDotCommand(DbConnection connection, string commandText, CancellationToken cancellationToken)
     {
         var tokens = commandText.Split(' ');
         if (!_dotCommands.ContainsKey(tokens.First()))
         {
             throw new ArgumentException($"No command found matching {tokens.First()}");
         }
-        await _dotCommands[tokens.First()](tokens.Skip(1).ToArray());
+        await _dotCommands[tokens.First()](tokens.Skip(1).ToArray(), cancellationToken);
     }
 
-    private async Task HandleSqlCommand(DbConnection connection, string commandText)
+    private async Task HandleSqlCommand(DbConnection connection, string commandText, CancellationToken cancellationToken)
     {
         var command = connection.CreateCommand();
         command.CommandText = commandText;
-        using var reader = await command.ExecuteReaderAsync();
+        using var reader = await command.ExecuteReaderAsync(cancellationToken);
         _outputFormatter.WriteOutput(reader);
     }
 
-    private IDictionary<string, Func<string[],Task>> BuildDotCommands() => ImmutableDictionary.CreateRange(
-        new KeyValuePair<string, Func<string[],Task>>[] {
-            KeyValuePair.Create<string, Func<string[],Task>>(".exit", Exit)
+    private IDictionary<string, Func<string[], CancellationToken, Task>> BuildDotCommands() => ImmutableDictionary.CreateRange(
+        new KeyValuePair<string, Func<string[], CancellationToken, Task>>[] {
+            KeyValuePair.Create<string, Func<string[],CancellationToken,Task>>(".exit", Exit)
         }
     );
 
-    private async Task Exit(string[] _) => _terminate = true;
+    private async Task Exit(string[] args, CancellationToken cancellationToken) => _terminate = true;
 }
 
