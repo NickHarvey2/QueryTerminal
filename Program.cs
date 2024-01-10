@@ -11,7 +11,7 @@ namespace QueryTerminal;
 
 class Program
 {
-    private delegate Task RunHandler(RootCommandHandler handler, string sqlQuery, CancellationToken cancellationToken);
+    private delegate Task HandlerExecutor(RootCommandHandler handler, string sqlQuery, CancellationToken cancellationToken);
 
     static async Task<int> Main(string[] args)
     {
@@ -19,8 +19,8 @@ class Program
         var services = new ServiceCollection();
 
         // Runners
-        services.AddKeyedTransient<RunHandler>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
-        services.AddKeyedTransient<RunHandler>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
+        services.AddKeyedTransient<HandlerExecutor>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
+        services.AddKeyedTransient<HandlerExecutor>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
 
         // Connection providers
         services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
@@ -82,8 +82,8 @@ class Program
         rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormat) => {
             var handler = new RootCommandHandler(connectionString, serviceProvider);
             handler.SetOutputFormat(outputFormat);
-            var runHandler = serviceProvider.GetRequiredKeyedService<RunHandler>(dbType);
-            await runHandler(handler, sqlQuery, cancellationToken);
+            var executor = serviceProvider.GetRequiredKeyedService<HandlerExecutor>(dbType);
+            await executor.Invoke(handler, sqlQuery, cancellationToken);
         }, serviceProvider, databaseTypeOption, connectionStringOption, sqlQueryOption, outputFormatOption);
 
         // Execution and error handling

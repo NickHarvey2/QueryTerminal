@@ -34,7 +34,7 @@ Options:
 - output formatter framework
     - `useQuotes` option for tsv/csv
     - breakdown chart for spectre tables
-- REPL mode
+- REPL mode -- using PrettyPrompt
     - completion
     - multi line mode
     - command history

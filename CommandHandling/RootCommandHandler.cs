@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Data;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
@@ -8,15 +9,18 @@ namespace QueryTerminal.CommandHandling;
 
 public class RootCommandHandler
 {
-    protected IServiceProvider _serviceProvider;
-    protected string? _connectionString;
-    protected IOutputFormatter _outputFormatter;
+    private IServiceProvider _serviceProvider;
+    private string? _connectionString;
+    private IOutputFormatter _outputFormatter;
+    private bool _terminate = false;
+    private IDictionary<string, Action<string[]>> _dotCommands;
 
     public RootCommandHandler(string? connectionString, IServiceProvider serviceProvider)
     {
         _connectionString = connectionString;
         _serviceProvider = serviceProvider;
         SetOutputFormat("csv");
+        _dotCommands = BuildDotCommands();
     }
 
     public void SetOutputFormat(string outputFormat)
@@ -31,33 +35,53 @@ public class RootCommandHandler
         }
     }
 
-    public async Task Run<TConnection>(string? sqlQuery, CancellationToken cancellationToken) where TConnection : IDbConnection
+    public async Task Run<TConnection>(string? command, CancellationToken cancellationToken) where TConnection : IDbConnection
     {
         using var executor = _serviceProvider.GetRequiredService<IQueryExecutor<TConnection>>();
         executor.Connect(_connectionString);
 
-        if (string.IsNullOrWhiteSpace(sqlQuery))
+        if (string.IsNullOrWhiteSpace(command))
         {
-            while (true)
+            while (!_terminate)
             {
                 // TODO: this is the most basic possible implementation that still does _something_, and is missing several key features
-                sqlQuery = AnsiConsole.Prompt(new TextPrompt<string>(">"));
-                if (sqlQuery.StartsWith("."))
+                command = AnsiConsole.Prompt(new TextPrompt<string>(">"));
+                try
                 {
-                    if (sqlQuery == ".exit")
+                    if (command.StartsWith("."))
                     {
-                        break;
+                        var tokens = command.Split(' ');
+                        if (!_dotCommands.ContainsKey(tokens.First()))
+                        {
+                            throw new ArgumentException($"No command found matching {tokens.First()}");
+                        }
+                        _dotCommands[tokens.First()].Invoke(tokens.Skip(1).ToArray());
+                    }
+                    else
+                    {
+                        using var reader = await executor.Execute(command, cancellationToken);
+                        _outputFormatter.WriteOutput(reader);
                     }
                 }
-                using var reader = await executor.Execute(sqlQuery, cancellationToken);
-                _outputFormatter.WriteOutput(reader);
+                catch (Exception e)
+                {
+                    AnsiConsole.WriteException(e);
+                }
             }
         }
         else
         {
-            using var reader = await executor.Execute(sqlQuery, cancellationToken);
+            using var reader = await executor.Execute(command, cancellationToken);
             _outputFormatter.WriteOutput(reader);
         }
     }
+
+    private IDictionary<string, Action<string[]>> BuildDotCommands() => ImmutableDictionary.CreateRange(
+        new KeyValuePair<string, Action<string[]>>[] {
+            KeyValuePair.Create<string, Action<string[]>>(".exit", Exit)
+        }
+    );
+
+    private void Exit(string[] _) => _terminate = true;
 }
 
