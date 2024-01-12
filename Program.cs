@@ -11,7 +11,7 @@ namespace QueryTerminal;
 
 class Program
 {
-    private delegate Task HandlerExecutor(RootCommandHandler handler, string sqlQuery, CancellationToken cancellationToken);
+    private delegate Task HandlerExecutor(RootCommandHandler handler, string? sqlQuery, CancellationToken cancellationToken);
 
     static async Task<int> Main(string[] args)
     {
@@ -25,6 +25,9 @@ class Program
         // Connection providers
         services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
         services.AddTransient<IDbConnectionProvider<SqliteConnection>, SqliteConnectionProvider>();
+
+        // Extension Provider; tells the SqliteConnectionProvider what extensions to load
+        services.AddSingleton<SqliteExtensionProvider>();
 
         // Output formatters
         services.AddKeyedTransient<IOutputFormatter>("csv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
