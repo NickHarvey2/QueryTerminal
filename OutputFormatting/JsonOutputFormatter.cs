@@ -17,6 +17,7 @@ public class JsonOutputFormatter : IOutputFormatter
             WriteIndented = pretty,
             TypeInfoResolver = SourceGenerationContext.Default
         };
+        _jsonSerializerOptions.Converters.Add(new DBNullJsonConverter());
     }
 
     public void WriteOutput(IDataReader reader)
