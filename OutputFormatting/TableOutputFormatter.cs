@@ -19,6 +19,10 @@ public class TableOutputFormatter : IOutputFormatter
         {
             table.AddColumns(Enumerable.Range(0, reader.FieldCount).Select(i => new TableColumn($"[bold blue]{reader.GetName(i)}[/]")).ToArray());
         }
+        else
+        {
+            table.AddColumns(Enumerable.Range(0, reader.FieldCount).Select(i => new TableColumn(reader.GetName(i))).ToArray());
+        }
 
         while (reader.Read())
         {
