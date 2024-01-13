@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Data.Common;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
@@ -13,26 +12,29 @@ public class RootCommandHandler
     private string? _connectionString;
     private IOutputFormatter _outputFormatter;
     private bool _terminate = false;
-    private IDictionary<string, Func<DbConnection, string[], CancellationToken, Task>> _dotCommands;
 
     public RootCommandHandler(string? connectionString, IServiceProvider serviceProvider)
     {
         _connectionString = connectionString;
         _serviceProvider = serviceProvider;
-        SetOutputFormat("csv");
-        _dotCommands = BuildDotCommands();
+        SetOutputFormatByName("csv");
     }
 
-    public void SetOutputFormat(string outputFormat)
+    public void SetOutputFormatByName(string outputFormatName)
     {
         try
         {
-            _outputFormatter = _serviceProvider.GetRequiredKeyedService<IOutputFormatter>(outputFormat);
+            _outputFormatter = _serviceProvider.GetRequiredKeyedService<IOutputFormatter>(outputFormatName);
         }
         catch (InvalidOperationException ioe)
         {
-            throw new InvalidOperationException($"No output formatter found for key '{outputFormat}'", ioe);
+            throw new InvalidOperationException($"No output formatter found for key '{outputFormatName}'", ioe);
         }
+    }
+
+    public void Terminate()
+    {
+        _terminate = true;
     }
 
     public async Task Run<TConnection>(string? commandText, CancellationToken cancellationToken) where TConnection : DbConnection
@@ -44,7 +46,7 @@ public class RootCommandHandler
         {
             while (!_terminate)
             {
-                // TODO: this is the most basic possible implementation that still does _something_, and is missing several key features
+                var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandlerFactory<TConnection>>().Create(this, connection);
                 commandText = AnsiConsole.Prompt(new TextPrompt<string>(">"));
                 if (string.IsNullOrWhiteSpace(commandText))
                 {
@@ -54,12 +56,11 @@ public class RootCommandHandler
                 {
                     if (commandText.StartsWith("."))
                     {
-                        await HandleDotCommand(connection, commandText, cancellationToken);
+                        await dotCommandHandler.Handle(commandText, cancellationToken);
                     }
                     else
                     {
-                        using var reader = await HandleSqlCommand(connection, commandText, cancellationToken);
-                        _outputFormatter.WriteOutput(reader);
+                        await HandleSqlCommand(connection, commandText, cancellationToken);
                     }
                 }
                 catch (Exception e)
@@ -70,33 +71,15 @@ public class RootCommandHandler
         }
         else
         {
-            using var reader = await HandleSqlCommand(connection, commandText, cancellationToken);
-            _outputFormatter.WriteOutput(reader);
+            await HandleSqlCommand(connection, commandText, cancellationToken);
         }
     }
 
-    private async Task HandleDotCommand(DbConnection connection, string commandText, CancellationToken cancellationToken)
-    {
-        var tokens = commandText.Split(' ');
-        if (!_dotCommands.ContainsKey(tokens.First()))
-        {
-            throw new ArgumentException($"No command found matching {tokens.First()}");
-        }
-        await _dotCommands[tokens.First()](connection, tokens.Skip(1).ToArray(), cancellationToken);
-    }
-
-    private async Task<DbDataReader> HandleSqlCommand(DbConnection connection, string commandText, CancellationToken cancellationToken)
+    private async Task HandleSqlCommand(DbConnection connection, string commandText, CancellationToken cancellationToken)
     {
         var command = connection.CreateCommand();
         command.CommandText = commandText;
-        return await command.ExecuteReaderAsync(cancellationToken);
+        using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        _outputFormatter.WriteOutput(reader);
     }
-
-    private IDictionary<string, Func<DbConnection, string[], CancellationToken, Task>> BuildDotCommands() => ImmutableDictionary.CreateRange(
-        new KeyValuePair<string, Func<DbConnection, string[], CancellationToken, Task>>[] {
-            KeyValuePair.Create<string, Func<DbConnection, string[], CancellationToken, Task>>(".exit", Exit),
-        }
-    );
-
-    private async Task Exit(DbConnection connection, string[] args, CancellationToken cancellationToken) => _terminate = true;
 }

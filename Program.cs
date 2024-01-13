@@ -11,25 +11,25 @@ namespace QueryTerminal;
 
 class Program
 {
-    private delegate Task HandlerExecutor(RootCommandHandler handler, string? sqlQuery, CancellationToken cancellationToken);
-
     static async Task<int> Main(string[] args)
     {
         // configure service collection
         var services = new ServiceCollection();
 
-        // Runners
         services.AddKeyedTransient<HandlerExecutor>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
         services.AddKeyedTransient<HandlerExecutor>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
 
-        // Connection providers
         services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
         services.AddTransient<IDbConnectionProvider<SqliteConnection>, SqliteConnectionProvider>();
 
-        // Extension Provider; tells the SqliteConnectionProvider what extensions to load
         services.AddSingleton<SqliteExtensionProvider>();
 
-        // Output formatters
+        services.AddTransient<DotCommandHandlerFactory<SqlConnection>>();
+        services.AddTransient<DotCommandHandlerFactory<SqliteConnection>>();
+
+        services.AddTransient<IDbMetadataProvider<SqlConnection>, SqlMetadataProvider>();
+        services.AddTransient<IDbMetadataProvider<SqliteConnection>, SqliteMetadataProvider>();
+
         services.AddKeyedTransient<IOutputFormatter>("csv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
         services.AddKeyedTransient<IOutputFormatter>("csv-headers",   (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
         services.AddKeyedTransient<IOutputFormatter>("csv-noheaders", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: false));
@@ -78,9 +78,9 @@ class Program
         outputFormatOption.AddAlias("-o");
         rootCommand.AddOption(outputFormatOption);
 
-        rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormat) => {
+        rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormatName) => {
             var handler = new RootCommandHandler(connectionString, serviceProvider);
-            handler.SetOutputFormat(outputFormat);
+            handler.SetOutputFormatByName(outputFormatName);
             var executor = serviceProvider.GetRequiredKeyedService<HandlerExecutor>(dbType);
             await executor.Invoke(handler, sqlQuery, cancellationToken);
         }, serviceProvider, databaseTypeOption, connectionStringOption, sqlQueryOption, outputFormatOption);

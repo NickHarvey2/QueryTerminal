@@ -21,8 +21,6 @@ Options:
 - SQLite engine
     - Loading Extensions, in particular to enable use of SteamPipe modules that can be loaded as SQLite extensions providing virtual tables
 - dot commands
-    - .listTables
-    - .listColumns {table}
     - .setOutputFormat {format}
     - .getOutputFormat
     - .listOutputFormats
