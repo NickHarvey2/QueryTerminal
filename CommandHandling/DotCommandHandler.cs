@@ -27,6 +27,8 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
             KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listTables", ListTables),
             KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listColumns", ListColumns),
             KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listOutputFormats", ListOutputFormats),
+            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".getOutputFormat", GetOutputFormat),
+            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".setOutputFormat", SetOutputFormat),
         }
     );
 
@@ -85,4 +87,16 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         AnsiConsole.Write(table);
     }
 
+    public async Task GetOutputFormat(string[] args, CancellationToken cancellationToken)
+    {
+        var table = new Table();
+        table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
+        table.AddRow(_rootCommandHandler.OutputFormatter.Name, _rootCommandHandler.OutputFormatter.Description);
+        AnsiConsole.Write(table);
+    }
+
+    public async Task SetOutputFormat(string[] args, CancellationToken cancellationToken)
+    {
+        _rootCommandHandler.SetOutputFormatByName(args[0]);
+    }
 }

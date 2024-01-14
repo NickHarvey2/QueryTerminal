@@ -9,8 +9,10 @@ public class JsonOutputFormatter : IOutputFormatter
 {
     private readonly bool _pretty;
     private readonly JsonSerializerOptions _jsonSerializerOptions;
+    private readonly string _name;
+    private readonly string _description;
 
-    public JsonOutputFormatter(bool pretty = false)
+    public JsonOutputFormatter(string name, string description, bool pretty = false)
     {
         _pretty = pretty;
         _jsonSerializerOptions = new JsonSerializerOptions {
@@ -18,7 +20,13 @@ public class JsonOutputFormatter : IOutputFormatter
             TypeInfoResolver = SourceGenerationContext.Default
         };
         _jsonSerializerOptions.Converters.Add(new DBNullJsonConverter());
+        _name = name;
+        _description = description;
     }
+
+    public string Name => _name;
+
+    public string Description => _description;
 
     public void WriteOutput(IDataReader reader)
     {

@@ -22,15 +22,15 @@ public class RootCommandHandler
 
     public void SetOutputFormatByName(string outputFormatName)
     {
-        try
+        var newOutputFormatter = OutputFormat.Get(outputFormatName);
+        if (newOutputFormatter is null)
         {
-            _outputFormatter = _serviceProvider.GetRequiredKeyedService<IOutputFormatter>(outputFormatName);
+            throw new InvalidOperationException($"No output formatter found for key '{outputFormatName}'");
         }
-        catch (InvalidOperationException ioe)
-        {
-            throw new InvalidOperationException($"No output formatter found for key '{outputFormatName}'", ioe);
-        }
+        _outputFormatter = newOutputFormatter;
     }
+
+    public IOutputFormatter OutputFormatter { get => _outputFormatter; }
 
     public void Terminate()
     {

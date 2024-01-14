@@ -6,11 +6,19 @@ namespace QueryTerminal.OutputFormatting;
 public class TableOutputFormatter : IOutputFormatter
 {
     private readonly string _border;
+    private readonly string _name;
+    private readonly string _description;
 
-    public TableOutputFormatter(string border = "square")
+    public TableOutputFormatter(string name, string description, string border = "square")
     {
         _border = border;
+        _name = name;
+        _description = description;
     }
+
+    public string Name => _name;
+
+    public string Description => _description;
 
     public void WriteOutput(IDataReader reader)
     {

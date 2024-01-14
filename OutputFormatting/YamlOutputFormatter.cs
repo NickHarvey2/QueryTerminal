@@ -6,6 +6,19 @@ namespace QueryTerminal.OutputFormatting;
 
 public class YamlOutputFormatter : IOutputFormatter
 {
+    private readonly string _name;
+    private readonly string _description;
+
+    public YamlOutputFormatter(string name, string description)
+    {
+        _name = name;
+        _description = description;
+    }
+
+    public string Name => _name;
+
+    public string Description => _description;
+
     public void WriteOutput(IDataReader reader)
     {
         var values = new List<Dictionary<string,object>>();

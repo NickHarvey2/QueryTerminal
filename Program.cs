@@ -30,10 +30,10 @@ class Program
         services.AddTransient<IDbMetadataProvider<SqlConnection>, SqlMetadataProvider>();
         services.AddTransient<IDbMetadataProvider<SqliteConnection>, SqliteMetadataProvider>();
 
-        foreach (var outputFormat in OutputFormat.List())
-        {
-            services.AddKeyedTransient<IOutputFormatter>(outputFormat.Name, outputFormat.ImplementationFactory);
-        }
+        // foreach (var outputFormat in OutputFormat.List())
+        // {
+        //     services.AddKeyedTransient<IOutputFormatter>(outputFormat.Name, outputFormat.ImplementationFactory);
+        // }
 
         var serviceProvider = services.BuildServiceProvider();
 
