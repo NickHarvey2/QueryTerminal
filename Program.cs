@@ -30,19 +30,10 @@ class Program
         services.AddTransient<IDbMetadataProvider<SqlConnection>, SqlMetadataProvider>();
         services.AddTransient<IDbMetadataProvider<SqliteConnection>, SqliteMetadataProvider>();
 
-        services.AddKeyedTransient<IOutputFormatter>("csv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
-        services.AddKeyedTransient<IOutputFormatter>("csv-headers",   (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: true));
-        services.AddKeyedTransient<IOutputFormatter>("csv-noheaders", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: ',', includeHeaders: false));
-        services.AddKeyedTransient<IOutputFormatter>("tsv",           (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: true));
-        services.AddKeyedTransient<IOutputFormatter>("tsv-headers",   (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: true));
-        services.AddKeyedTransient<IOutputFormatter>("tsv-noheaders", (serviceProvider,serviceKey) => new DelimitedOutputFormatter(delimiter: '\t', includeHeaders: false));
-        services.AddKeyedTransient<IOutputFormatter>("json",          (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: false));
-        services.AddKeyedTransient<IOutputFormatter>("json-minified", (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: false));
-        services.AddKeyedTransient<IOutputFormatter>("json-pretty",   (serviceProvider,serviceKey) => new JsonOutputFormatter(pretty: true));
-        services.AddKeyedTransient<IOutputFormatter>("yaml",          (serviceProvider,serviceKey) => new YamlOutputFormatter());
-        services.AddKeyedTransient<IOutputFormatter>("table",         (serviceProvider,serviceKey) => new TableOutputFormatter(border: "square"));
-        services.AddKeyedTransient<IOutputFormatter>("md",            (serviceProvider,serviceKey) => new TableOutputFormatter(border: "markdown"));
-        services.AddKeyedTransient<IOutputFormatter>("markdown",      (serviceProvider,serviceKey) => new TableOutputFormatter(border: "markdown"));
+        foreach (var outputFormat in OutputFormat.List())
+        {
+            services.AddKeyedTransient<IOutputFormatter>(outputFormat.Name, outputFormat.ImplementationFactory);
+        }
 
         var serviceProvider = services.BuildServiceProvider();
 

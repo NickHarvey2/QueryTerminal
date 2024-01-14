@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Data.Common;
 using QueryTerminal.Data;
+using QueryTerminal.OutputFormatting;
 using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
@@ -24,7 +25,8 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         new KeyValuePair<string, Func<string[], CancellationToken, Task>>[] {
             KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".exit", Exit),
             KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listTables", ListTables),
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listColumns", ListColumns)
+            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listColumns", ListColumns),
+            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listOutputFormats", ListOutputFormats),
         }
     );
 
@@ -57,7 +59,12 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
 
     public async Task ListColumns(string[] args, CancellationToken cancellationToken)
     {
-        var dbColumns = await _metadataProvider.GetColumns(_connection, args.Single(), cancellationToken);
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Required parameter missing: tableName");
+            return;
+        }
+        var dbColumns = await _metadataProvider.GetColumns(_connection, args[0], cancellationToken);
         var table = new Table();
         table.AddColumns($"[bold blue]Name[/]", "[bold blue]Type[/]");
         foreach (var dbColumn in dbColumns)
@@ -66,4 +73,16 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         }
         AnsiConsole.Write(table);
     }
+
+    public async Task ListOutputFormats(string[] args, CancellationToken cancellationToken)
+    {
+        var table = new Table();
+        table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
+        foreach (var outputFormat in OutputFormat.List())
+        {
+            table.AddRow(outputFormat.Name, outputFormat.Description);
+        }
+        AnsiConsole.Write(table);
+    }
+
 }
