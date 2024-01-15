@@ -2,12 +2,28 @@ using Microsoft.Data.Sqlite;
 
 namespace QueryTerminal.Data;
 
-public class SqliteMetadataProvider : IDbMetadataProvider<SqliteConnection>
+public class SqliteQuertyTerminalDbConnection : QueryTerminalDbConnection<SqliteConnection>
 {
-    public async Task<IEnumerable<DbColumn>> GetColumns(SqliteConnection connection, string tableName, CancellationToken cancellationToken)
+    private SqliteExtensionProvider _extensionProvider;
+
+    public SqliteQuertyTerminalDbConnection(SqliteExtensionProvider extensionProvider)
+    {
+        _extensionProvider = extensionProvider;
+    }
+    
+    public override async Task ConnectAsync(string connectionString, CancellationToken cancellationToken)
+    {
+        await base.ConnectAsync(connectionString, cancellationToken);
+        foreach (var extension in _extensionProvider.GetExtensions())
+        {
+            _connection.LoadExtension(extension);
+        }
+    }
+    
+    public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {
         var commandText = $"SELECT name,type FROM PRAGMA_TABLE_INFO('{tableName}')";
-        var command = connection.CreateCommand();
+        var command = _connection.CreateCommand();
         command.CommandText = commandText;
         using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -21,10 +37,10 @@ public class SqliteMetadataProvider : IDbMetadataProvider<SqliteConnection>
         return columns;
     }
 
-    public async Task<IEnumerable<DbTable>> GetTables(SqliteConnection connection, CancellationToken cancellationToken)
+    public override async Task<IEnumerable<DbTable>> GetTablesAsync(CancellationToken cancellationToken)
     {
         var commandText = "SELECT name,type FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%'";
-        var command = connection.CreateCommand();
+        var command = _connection.CreateCommand();
         command.CommandText = commandText;
         using var reader = await command.ExecuteReaderAsync(cancellationToken);
 

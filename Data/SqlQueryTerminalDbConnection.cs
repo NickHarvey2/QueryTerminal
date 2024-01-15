@@ -2,12 +2,12 @@ using Microsoft.Data.SqlClient;
 
 namespace QueryTerminal.Data;
 
-public class SqlMetadataProvider : IDbMetadataProvider<SqlConnection>
+public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnection>
 {
-    public async Task<IEnumerable<DbColumn>> GetColumns(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {
         var commandText = $"SELECT COLUMN_NAME,DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='{tableName}'";
-        var command = connection.CreateCommand();
+        var command = _connection.CreateCommand();
         command.CommandText = commandText;
         using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -21,10 +21,10 @@ public class SqlMetadataProvider : IDbMetadataProvider<SqlConnection>
         return columns;
     }
 
-    public async Task<IEnumerable<DbTable>> GetTables(SqlConnection connection, CancellationToken cancellationToken)
+    public override async Task<IEnumerable<DbTable>> GetTablesAsync(CancellationToken cancellationToken)
     {
         var commandText = "SELECT TABLE_NAME,TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'";
-        var command = connection.CreateCommand();
+        var command = _connection.CreateCommand();
         command.CommandText = commandText;
         using var reader = await command.ExecuteReaderAsync(cancellationToken);
 

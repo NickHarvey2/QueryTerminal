@@ -19,16 +19,13 @@ class Program
         services.AddKeyedTransient<HandlerExecutor>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
         services.AddKeyedTransient<HandlerExecutor>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
 
-        services.AddTransient<IDbConnectionProvider<SqlConnection>, SqlConnectionProvider>();
-        services.AddTransient<IDbConnectionProvider<SqliteConnection>, SqliteConnectionProvider>();
+        services.AddTransient<QueryTerminalDbConnection<SqlConnection>, SqlQueryTerminalDbConnection>();
+        services.AddTransient<QueryTerminalDbConnection<SqliteConnection>, SqliteQuertyTerminalDbConnection>();
 
         services.AddSingleton<SqliteExtensionProvider>();
 
         services.AddTransient<DotCommandHandlerFactory<SqlConnection>>();
         services.AddTransient<DotCommandHandlerFactory<SqliteConnection>>();
-
-        services.AddTransient<IDbMetadataProvider<SqlConnection>, SqlMetadataProvider>();
-        services.AddTransient<IDbMetadataProvider<SqliteConnection>, SqliteMetadataProvider>();
 
         services.AddTransient<QueryTerminalPrompt>();
 
