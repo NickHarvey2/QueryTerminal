@@ -2,6 +2,7 @@ using System.Data.Common;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
+using QueryTerminal.Prompting;
 using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
@@ -44,10 +45,16 @@ public class RootCommandHandler
 
         if (string.IsNullOrWhiteSpace(commandText))
         {
+            var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandlerFactory<TConnection>>().Create(this, connection);
+            await using var prompt = _serviceProvider.GetRequiredService<QueryTerminalPrompt>();
             while (!_terminate)
             {
-                var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandlerFactory<TConnection>>().Create(this, connection);
-                commandText = AnsiConsole.Prompt(new TextPrompt<string>(">"));
+                var result = await prompt.ReadLineAsync();
+                if (!result.IsSuccess)
+                {
+                    continue;
+                }
+                commandText = result.Text;
                 if (string.IsNullOrWhiteSpace(commandText))
                 {
                     continue;

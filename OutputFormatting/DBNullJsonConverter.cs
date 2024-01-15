@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace QueryTerminal.OutputFormatting;
 
-class DBNullJsonConverter : JsonConverter<DBNull>
+internal class DBNullJsonConverter : JsonConverter<DBNull>
 {
     public override DBNull Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
