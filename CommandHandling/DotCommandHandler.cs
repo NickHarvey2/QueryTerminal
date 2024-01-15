@@ -6,14 +6,14 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class DotCommandHandler<TConnection> where TConnection : DbConnection
+public class DotCommandHandler<TConnection> where TConnection : DbConnection, new()
 {
     private readonly RootCommandHandler _rootCommandHandler;
-    private readonly TConnection _connection;
+    private readonly QueryTerminalDbConnection<TConnection> _connection;
     private readonly IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> _dotCommands;
     private readonly IDbMetadataProvider<TConnection> _metadataProvider;
 
-    public DotCommandHandler(RootCommandHandler rootCommandHandler, TConnection connection, IDbMetadataProvider<TConnection> metadataProvider)
+    public DotCommandHandler(RootCommandHandler rootCommandHandler, QueryTerminalDbConnection<TConnection> connection, IDbMetadataProvider<TConnection> metadataProvider)
     {
         _rootCommandHandler = rootCommandHandler;
         _connection = connection;
@@ -49,7 +49,8 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
 
     public async Task ListTables(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
-        var dbTables = await _metadataProvider.GetTables(_connection, cancellationToken);
+        // var dbTables = await _metadataProvider.GetTables(_connection, cancellationToken);
+        var dbTables = await _connection.GetTablesAsync(cancellationToken);
         var table = new Table();
         table.AddColumns($"[bold blue]Name[/]", "[bold blue]Type[/]");
         foreach (var dbTable in dbTables)
@@ -66,7 +67,8 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
             Console.WriteLine("Required parameter missing: tableName");
             return;
         }
-        var dbColumns = await _metadataProvider.GetColumns(_connection, args[0], cancellationToken);
+        // var dbColumns = await _metadataProvider.GetColumns(_connection, args[0], cancellationToken);
+        var dbColumns = await _connection.GetColumnsAsync(args[0], cancellationToken);
         var table = new Table();
         table.AddColumns($"[bold blue]Name[/]", "[bold blue]Type[/]");
         foreach (var dbColumn in dbColumns)

@@ -3,7 +3,7 @@ using QueryTerminal.Data;
 
 namespace QueryTerminal.CommandHandling;
 
-public class DotCommandHandlerFactory<TConnection> where TConnection : DbConnection
+public class DotCommandHandlerFactory<TConnection> where TConnection : DbConnection, new()
 {
     private readonly IDbMetadataProvider<TConnection> _metadataProvider;
 
@@ -12,8 +12,13 @@ public class DotCommandHandlerFactory<TConnection> where TConnection : DbConnect
         _metadataProvider = metadataProvider;
     }
 
-    public DotCommandHandler<TConnection> Create(RootCommandHandler rootCommandHandler, TConnection connection)
+    public DotCommandHandler<TConnection> Create(RootCommandHandler rootCommandHandler, QueryTerminalDbConnection<TConnection> connection)
     {
         return new DotCommandHandler<TConnection>(rootCommandHandler, connection, _metadataProvider);
     }
+
+    // public DotCommandHandler<TConnection> Create(RootCommandHandler rootCommandHandler, TConnection connection)
+    // {
+    //     return new DotCommandHandler<TConnection>(rootCommandHandler, connection, _metadataProvider);
+    // }
 }

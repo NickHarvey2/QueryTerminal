@@ -38,10 +38,12 @@ public class RootCommandHandler
         _terminate = true;
     }
 
-    public async Task Run<TConnection>(string? commandText, CancellationToken cancellationToken) where TConnection : DbConnection
+    public async Task Run<TConnection>(string? commandText, CancellationToken cancellationToken) where TConnection : DbConnection, new()
     {
-        using var connection = _serviceProvider.GetRequiredService<IDbConnectionProvider<TConnection>>().Connect(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+        // using var connection = _serviceProvider.GetRequiredService<IDbConnectionProvider<TConnection>>().Connect(_connectionString);
+        // await connection.OpenAsync(cancellationToken);
+        await using var connection = _serviceProvider.GetRequiredService<QueryTerminalDbConnection<TConnection>>();
+        await connection.ConnectAsync(_connectionString, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(commandText))
         {
@@ -67,7 +69,9 @@ public class RootCommandHandler
                     }
                     else
                     {
-                        await HandleSqlCommand(connection, commandText, cancellationToken);
+                        // await HandleSqlCommand(connection, commandText, cancellationToken);
+                        await using var reader = await connection.ExecuteQueryAsync(commandText, cancellationToken);
+                        _outputFormatter.WriteOutput(reader);
                     }
                 }
                 catch (Exception e)
@@ -78,7 +82,9 @@ public class RootCommandHandler
         }
         else
         {
-            await HandleSqlCommand(connection, commandText, cancellationToken);
+            // await HandleSqlCommand(connection, commandText, cancellationToken);
+            await using var reader = await connection.ExecuteQueryAsync(commandText, cancellationToken);
+            _outputFormatter.WriteOutput(reader);
         }
     }
 
