@@ -2,10 +2,10 @@
 using Microsoft.Data.SqlClient;
 using QueryTerminal.CommandHandling;
 using Microsoft.Extensions.DependencyInjection;
-using QueryTerminal.OutputFormatting;
 using Spectre.Console;
 using Microsoft.Data.Sqlite;
 using QueryTerminal.Data;
+using QueryTerminal.Prompting;
 
 namespace QueryTerminal;
 
@@ -30,10 +30,7 @@ class Program
         services.AddTransient<IDbMetadataProvider<SqlConnection>, SqlMetadataProvider>();
         services.AddTransient<IDbMetadataProvider<SqliteConnection>, SqliteMetadataProvider>();
 
-        // foreach (var outputFormat in OutputFormat.List())
-        // {
-        //     services.AddKeyedTransient<IOutputFormatter>(outputFormat.Name, outputFormat.ImplementationFactory);
-        // }
+        services.AddTransient<QueryTerminalPrompt>();
 
         var serviceProvider = services.BuildServiceProvider();
 
