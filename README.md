@@ -17,20 +17,19 @@ Options:
 ```
 
 ## TODO
-- unit tests
 - SQLite engine
     - Loading Extensions, in particular to enable use of SteamPipe modules that can be loaded as SQLite extensions providing virtual tables
-- dot commands
-    - .listNamedQueries
-    - .execNamedQuery {namedQuery} [parameters ...]
+- named queries
+    - .createNamedQuery dot command
+    - .listNamedQueries dot command
+    - .execNamedQuery dot command
 - loading config from file
-    - connection string / DB type
-    - parameterized query list
 - output formatter framework
     - `useQuotes` option for tsv/csv
     - breakdown chart for spectre tables
 - REPL mode -- using PrettyPrompt
     - completion
+    - syntax highlighting
     - multi line mode
     - command history
 - Multiple named connections, allowing joins across connections
