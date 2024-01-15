@@ -10,7 +10,7 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
 {
     private readonly RootCommandHandler _rootCommandHandler;
     private readonly TConnection _connection;
-    private readonly IDictionary<string, Func<string[], CancellationToken, Task>> _dotCommands;
+    private readonly IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> _dotCommands;
     private readonly IDbMetadataProvider<TConnection> _metadataProvider;
 
     public DotCommandHandler(RootCommandHandler rootCommandHandler, TConnection connection, IDbMetadataProvider<TConnection> metadataProvider)
@@ -21,14 +21,14 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         _metadataProvider = metadataProvider;
     }
 
-    private IDictionary<string, Func<string[], CancellationToken, Task>> BuildDotCommands() => ImmutableDictionary.CreateRange(
-        new KeyValuePair<string, Func<string[], CancellationToken, Task>>[] {
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".exit", Exit),
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listTables", ListTables),
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listColumns", ListColumns),
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".listOutputFormats", ListOutputFormats),
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".getOutputFormat", GetOutputFormat),
-            KeyValuePair.Create<string, Func<string[], CancellationToken, Task>>(".setOutputFormat", SetOutputFormat),
+    private IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> BuildDotCommands() => ImmutableDictionary.CreateRange(
+        new KeyValuePair<string, Func<ImmutableArray<string>, CancellationToken, Task>>[] {
+            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".exit", Exit),
+            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".listTables", ListTables),
+            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".listColumns", ListColumns),
+            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".listOutputFormats", ListOutputFormats),
+            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".getOutputFormat", GetOutputFormat),
+            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".setOutputFormat", SetOutputFormat),
         }
     );
 
@@ -39,15 +39,15 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         {
             throw new ArgumentException($"No command found matching {tokens.First()}");
         }
-        await _dotCommands[tokens.First()](tokens.Skip(1).ToArray(), cancellationToken);
+        await _dotCommands[tokens.First()](tokens.Skip(1).ToImmutableArray(), cancellationToken);
     }
 
-    public async Task Exit(string[] args, CancellationToken cancellationToken)
+    public async Task Exit(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.Terminate();
     }
 
-    public async Task ListTables(string[] args, CancellationToken cancellationToken)
+    public async Task ListTables(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var dbTables = await _metadataProvider.GetTables(_connection, cancellationToken);
         var table = new Table();
@@ -59,7 +59,7 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         AnsiConsole.Write(table);
     }
 
-    public async Task ListColumns(string[] args, CancellationToken cancellationToken)
+    public async Task ListColumns(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         if (args.Length == 0)
         {
@@ -76,7 +76,7 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         AnsiConsole.Write(table);
     }
 
-    public async Task ListOutputFormats(string[] args, CancellationToken cancellationToken)
+    public async Task ListOutputFormats(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
@@ -87,7 +87,7 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         AnsiConsole.Write(table);
     }
 
-    public async Task GetOutputFormat(string[] args, CancellationToken cancellationToken)
+    public async Task GetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
@@ -95,7 +95,7 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection
         AnsiConsole.Write(table);
     }
 
-    public async Task SetOutputFormat(string[] args, CancellationToken cancellationToken)
+    public async Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.SetOutputFormatByName(args[0]);
     }
