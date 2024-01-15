@@ -2,11 +2,11 @@ using Microsoft.Data.Sqlite;
 
 namespace QueryTerminal.Data;
 
-public class SqliteQuertyTerminalDbConnection : QueryTerminalDbConnection<SqliteConnection>
+public class SqliteQueryTerminalDbConnection : QueryTerminalDbConnection<SqliteConnection>
 {
     private SqliteExtensionProvider _extensionProvider;
 
-    public SqliteQuertyTerminalDbConnection(SqliteExtensionProvider extensionProvider)
+    public SqliteQueryTerminalDbConnection(SqliteExtensionProvider extensionProvider)
     {
         _extensionProvider = extensionProvider;
     }

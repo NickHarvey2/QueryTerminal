@@ -20,7 +20,7 @@ class Program
         services.AddKeyedTransient<HandlerExecutor>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
 
         services.AddTransient<QueryTerminalDbConnection<SqlConnection>, SqlQueryTerminalDbConnection>();
-        services.AddTransient<QueryTerminalDbConnection<SqliteConnection>, SqliteQuertyTerminalDbConnection>();
+        services.AddTransient<QueryTerminalDbConnection<SqliteConnection>, SqliteQueryTerminalDbConnection>();
 
         services.AddSingleton<SqliteExtensionProvider>();
 
