@@ -40,8 +40,6 @@ public class RootCommandHandler
 
     public async Task Run<TConnection>(string? commandText, CancellationToken cancellationToken) where TConnection : DbConnection, new()
     {
-        // using var connection = _serviceProvider.GetRequiredService<IDbConnectionProvider<TConnection>>().Connect(_connectionString);
-        // await connection.OpenAsync(cancellationToken);
         await using var connection = _serviceProvider.GetRequiredService<QueryTerminalDbConnection<TConnection>>();
         await connection.ConnectAsync(_connectionString, cancellationToken);
 
@@ -69,7 +67,6 @@ public class RootCommandHandler
                     }
                     else
                     {
-                        // await HandleSqlCommand(connection, commandText, cancellationToken);
                         await using var reader = await connection.ExecuteQueryAsync(commandText, cancellationToken);
                         _outputFormatter.WriteOutput(reader);
                     }
@@ -82,17 +79,8 @@ public class RootCommandHandler
         }
         else
         {
-            // await HandleSqlCommand(connection, commandText, cancellationToken);
             await using var reader = await connection.ExecuteQueryAsync(commandText, cancellationToken);
             _outputFormatter.WriteOutput(reader);
         }
-    }
-
-    private async Task HandleSqlCommand(DbConnection connection, string commandText, CancellationToken cancellationToken)
-    {
-        var command = connection.CreateCommand();
-        command.CommandText = commandText;
-        using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        _outputFormatter.WriteOutput(reader);
     }
 }
