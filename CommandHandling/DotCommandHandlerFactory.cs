@@ -5,8 +5,15 @@ namespace QueryTerminal.CommandHandling;
 
 public class DotCommandHandlerFactory<TConnection> where TConnection : DbConnection, new()
 {
-    public DotCommandHandler<TConnection> Create(RootCommandHandler rootCommandHandler, QueryTerminalDbConnection<TConnection> connection)
+    private readonly QueryTerminalDbConnection<TConnection> _connection;
+
+    public DotCommandHandlerFactory(QueryTerminalDbConnection<TConnection> connection)
     {
-        return new DotCommandHandler<TConnection>(rootCommandHandler, connection);
+        _connection = connection;
+    }
+
+    public DotCommandHandler<TConnection> Create(RootCommandHandler rootCommandHandler)
+    {
+        return new DotCommandHandler<TConnection>(rootCommandHandler, _connection);
     }
 }
