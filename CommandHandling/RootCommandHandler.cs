@@ -45,7 +45,7 @@ public class RootCommandHandler
 
         if (string.IsNullOrWhiteSpace(commandText))
         {
-            var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandlerFactory<TConnection>>().Create(this);
+            var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandlerFactory<TConnection>>().Create(this, connection);
             await using var prompt = _serviceProvider.GetRequiredService<QueryTerminalPrompt>();
             while (!_terminate)
             {
