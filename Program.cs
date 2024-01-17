@@ -63,12 +63,18 @@ class Program
         outputFormatOption.AddAlias("-o");
         rootCommand.AddOption(outputFormatOption);
 
-        rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormatName) => {
+        rootCommand.SetHandler(async context => {
+            var connectionString  = context.ParseResult.GetValueForOption(connectionStringOption);
+            var outputFormatName  = context.ParseResult.GetValueForOption(outputFormatOption);
+            var dbType            = context.ParseResult.GetValueForOption(databaseTypeOption);
+            var sqlQuery          = context.ParseResult.GetValueForOption(sqlQueryOption);
+            var cancellationToken = context.GetCancellationToken();
+
             var handler = new RootCommandHandler(connectionString, serviceProvider);
             handler.SetOutputFormatByName(outputFormatName);
             var executor = serviceProvider.GetRequiredKeyedService<HandlerExecutor>(dbType);
             await executor.Invoke(handler, sqlQuery, cancellationToken);
-        }, serviceProvider, databaseTypeOption, connectionStringOption, sqlQueryOption, outputFormatOption);
+        });
 
         // Execution and error handling
         try {
