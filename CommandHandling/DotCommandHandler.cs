@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using System.Data.Common;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
 using Spectre.Console;
@@ -8,13 +10,13 @@ namespace QueryTerminal.CommandHandling;
 
 public class DotCommandHandler<TConnection> : IAsyncDisposable where TConnection : DbConnection, new()
 {
-    private readonly RootCommandHandler _rootCommandHandler;
+    private readonly IRootCommandHandler _rootCommandHandler;
     private readonly QueryTerminalDbConnection<TConnection> _connection;
     private readonly IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> _dotCommands;
 
-    public DotCommandHandler(RootCommandHandler rootCommandHandler, QueryTerminalDbConnection<TConnection> connection)
+    public DotCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration, QueryTerminalDbConnection<TConnection> connection)
     {
-        _rootCommandHandler = rootCommandHandler;
+        _rootCommandHandler = serviceProvider.GetRequiredKeyedService<IRootCommandHandler>(configuration["type"]);
         _connection = connection;
         _dotCommands = BuildDotCommands();
     }

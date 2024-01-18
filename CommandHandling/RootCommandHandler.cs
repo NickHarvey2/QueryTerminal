@@ -8,18 +8,18 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class RootCommandHandler
+public class RootCommandHandler<TConnection> : IRootCommandHandler where TConnection : DbConnection, new()
 {
     private IServiceProvider _serviceProvider;
     private IOutputFormatter _outputFormatter;
     private string? _query;
     private bool _terminate = false;
 
-    public RootCommandHandler(IServiceProvider serviceProvider)
+    public RootCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
-        _query = _serviceProvider.GetRequiredService<IConfiguration>()["query"];
-        SetOutputFormatByName(_serviceProvider.GetRequiredService<IConfiguration>()["outputFormat"]);
+        _query = configuration["query"];
+        SetOutputFormatByName(configuration["outputFormat"]);
     }
 
     public void SetOutputFormatByName(string outputFormatName)
@@ -39,7 +39,7 @@ public class RootCommandHandler
         _terminate = true;
     }
 
-    public async Task Run<TConnection>(CancellationToken cancellationToken) where TConnection : DbConnection, new()
+    public async Task Run(CancellationToken cancellationToken)
     {
         await using var connection = _serviceProvider.GetRequiredService<QueryTerminalDbConnection<TConnection>>();
         await connection.ConnectAsync(cancellationToken);

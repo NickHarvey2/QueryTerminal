@@ -22,9 +22,6 @@ class Program
         // configure service collection
         var services = new ServiceCollection();
 
-        services.AddKeyedTransient<HandlerExecutor>("mssql", (serviceProvider,serviceKey) => (handler,cancellationToken) => handler.Run<SqlConnection>(cancellationToken));
-        services.AddKeyedTransient<HandlerExecutor>("sqlite", (serviceProvider,serviceKey) => (handler,cancellationToken) => handler.Run<SqliteConnection>(cancellationToken));
-
         services.AddTransient<QueryTerminalDbConnection<SqlConnection>, SqlQueryTerminalDbConnection>();
         services.AddTransient<QueryTerminalDbConnection<SqliteConnection>, SqliteQueryTerminalDbConnection>();
 
@@ -35,9 +32,8 @@ class Program
 
         services.AddTransient<QueryTerminalPrompt>();
 
-        services.AddSingleton<RootCommandHandler>();
-        // services.AddKeyedSingleton<IRootCommandHandler, RootCommandHandler<SqlConnection>>("mssql");
-        // services.AddKeyedSingleton<IRootCommandHandler, RootCommandHandler<SqliteConnection>>("sqlite");
+        services.AddKeyedSingleton<IRootCommandHandler, RootCommandHandler<SqlConnection>>("mssql");
+        services.AddKeyedSingleton<IRootCommandHandler, RootCommandHandler<SqliteConnection>>("sqlite");
 
         // Configure command and options
         var rootCommand = new RootCommand("Connect and run commands against databases");
@@ -83,11 +79,8 @@ class Program
             
             var cancellationToken = context.GetCancellationToken();
 
-            // var handler = serviceProvider.GetRequiredKeyedService<IRootCommandHandler>(dbType);
-            // await handler.Run(cancellationToken);
-            var handler = serviceProvider.GetRequiredService<RootCommandHandler>();
-            var executor = serviceProvider.GetRequiredKeyedService<HandlerExecutor>(dbType);
-            await executor.Invoke(handler, cancellationToken);
+            var handler = serviceProvider.GetRequiredKeyedService<IRootCommandHandler>(dbType);
+            await handler.Run(cancellationToken);
         });
 
         // Execution and error handling
