@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
 
 namespace QueryTerminal.Data;
 
@@ -6,18 +7,15 @@ public class SqliteQueryTerminalDbConnection : QueryTerminalDbConnection<SqliteC
 {
     private SqliteExtensionProvider _extensionProvider;
 
-    public SqliteQueryTerminalDbConnection(SqliteExtensionProvider extensionProvider)
+    public SqliteQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
+
+    public override async Task ConnectAsync(CancellationToken cancellationToken)
     {
-        _extensionProvider = extensionProvider;
-    }
-    
-    public override async Task ConnectAsync(string connectionString, CancellationToken cancellationToken)
-    {
-        await base.ConnectAsync(connectionString, cancellationToken);
-        foreach (var extension in _extensionProvider.GetExtensions())
-        {
-            _connection.LoadExtension(extension);
-        }
+        await base.ConnectAsync(cancellationToken);
+        // foreach (var extension in _extensionProvider.GetExtensions())
+        // {
+        //     _connection.LoadExtension(extension);
+        // }
     }
     
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)

@@ -6,7 +6,7 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class DotCommandHandler<TConnection> where TConnection : DbConnection, new()
+public class DotCommandHandler<TConnection> : IAsyncDisposable where TConnection : DbConnection, new()
 {
     private readonly RootCommandHandler _rootCommandHandler;
     private readonly QueryTerminalDbConnection<TConnection> _connection;
@@ -29,6 +29,11 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection, ne
             KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".setOutputFormat", SetOutputFormat),
         }
     );
+
+    public async Task Initialize(CancellationToken cancellationToken)
+    {
+        await _connection.ConnectAsync(cancellationToken);
+    }
 
     public async Task Handle(string commandText, CancellationToken cancellationToken)
     {
@@ -96,5 +101,10 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection, ne
     public async Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.SetOutputFormatByName(args[0]);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _connection.DisposeAsync();
     }
 }
