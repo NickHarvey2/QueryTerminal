@@ -17,9 +17,6 @@ Options:
 ```
 
 ## TODO
-- Move everything to singletons where feasible to avoid overhead of creating new instances
-- Move everything to ValueTasks where feasible
-- Look into removing type parameters as generics, should simplify some of the service setup
 - SQLite engine
     - Loading Extensions, in particular to enable use of SteamPipe modules that can be loaded as SQLite extensions providing virtual tables
 - named queries
