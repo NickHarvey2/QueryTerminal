@@ -18,14 +18,14 @@ internal class QueryTerminalPromptCallbacks : PromptCallbacks
     // }
 
     // TODO: implement this stub
-    protected override async Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
+    protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
     {
-        return Enumerable.Empty<CompletionItem>().ToImmutableList();
+        return Task.FromResult<IReadOnlyList<CompletionItem>>(Enumerable.Empty<CompletionItem>().ToImmutableList());
     }
 
-    protected override async Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
+    protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
     {
-        return EnumerateFormatSpans(text).ToImmutableList();
+        return Task.FromResult<IReadOnlyCollection<FormatSpan>>(EnumerateFormatSpans(text).ToImmutableList());
     }
 
     private static IEnumerable<FormatSpan> EnumerateFormatSpans(string text)

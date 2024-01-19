@@ -46,9 +46,10 @@ public class DotCommandHandler : IAsyncDisposable
         await _dotCommands[tokens.First()](tokens.Skip(1).ToImmutableArray(), cancellationToken);
     }
 
-    public async Task Exit(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task Exit(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.Terminate();
+        return Task.CompletedTask;
     }
 
     public async Task ListTables(ImmutableArray<string> args, CancellationToken cancellationToken)
@@ -80,7 +81,7 @@ public class DotCommandHandler : IAsyncDisposable
         AnsiConsole.Write(table);
     }
 
-    public async Task ListOutputFormats(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task ListOutputFormats(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
@@ -89,19 +90,22 @@ public class DotCommandHandler : IAsyncDisposable
             table.AddRow(outputFormat.Name, outputFormat.Description);
         }
         AnsiConsole.Write(table);
+        return Task.CompletedTask;
     }
 
-    public async Task GetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task GetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
         table.AddRow(_rootCommandHandler.OutputFormatter.Name, _rootCommandHandler.OutputFormatter.Description);
         AnsiConsole.Write(table);
+        return Task.CompletedTask;
     }
 
-    public async Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.SetOutputFormatByName(args[0]);
+        return Task.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()

@@ -1,4 +1,3 @@
-using System.Data.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
@@ -10,18 +9,16 @@ namespace QueryTerminal.CommandHandling;
 
 public class RootCommandHandler
 {
-    private IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
     private IOutputFormatter _outputFormatter;
-    private string? _query;
     private bool _terminate = false;
 
     public RootCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
-        _query = configuration["query"];
-        SetOutputFormatByName(configuration["outputFormat"]);
+        SetOutputFormatByName(_configuration["outputFormat"]);
     }
 
     public void SetOutputFormatByName(string outputFormatName)
@@ -46,7 +43,7 @@ public class RootCommandHandler
         await using var connection = _serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(_configuration["type"]);
         await connection.ConnectAsync(cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(_query))
+        if (string.IsNullOrWhiteSpace(_configuration["query"]))
         {
             await using var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandler>();
             await dotCommandHandler.Initialize(cancellationToken);
@@ -58,20 +55,20 @@ public class RootCommandHandler
                 {
                     continue;
                 }
-                _query = result.Text;
-                if (string.IsNullOrWhiteSpace(_query))
+                var query = result.Text;
+                if (string.IsNullOrWhiteSpace(query))
                 {
                     continue;
                 }
                 try
                 {
-                    if (_query.StartsWith("."))
+                    if (query.StartsWith("."))
                     {
-                        await dotCommandHandler.Handle(_query, cancellationToken);
+                        await dotCommandHandler.Handle(query, cancellationToken);
                     }
                     else
                     {
-                        await using var reader = await connection.ExecuteQueryAsync(_query, cancellationToken);
+                        await using var reader = await connection.ExecuteQueryAsync(query, cancellationToken);
                         _outputFormatter.WriteOutput(reader);
                     }
                 }
@@ -83,7 +80,7 @@ public class RootCommandHandler
         }
         else
         {
-            await using var reader = await connection.ExecuteQueryAsync(_query, cancellationToken);
+            await using var reader = await connection.ExecuteQueryAsync(_configuration["query"], cancellationToken);
             _outputFormatter.WriteOutput(reader);
         }
     }
