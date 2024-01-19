@@ -22,12 +22,12 @@ class Program
         // configure service collection
         var services = new ServiceCollection();
 
-        services.AddKeyedSingleton<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
-        services.AddKeyedSingleton<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
+        services.AddKeyedTransient<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
+        services.AddKeyedTransient<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
 
         services.AddSingleton<SqliteExtensionProvider>();
 
-        services.AddSingleton<DotCommandHandler>();
+        services.AddTransient<DotCommandHandler>();
 
         services.AddSingleton<QueryTerminalPrompt>();
 
