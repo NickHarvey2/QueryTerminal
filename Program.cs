@@ -22,18 +22,16 @@ class Program
         // configure service collection
         var services = new ServiceCollection();
 
-        services.AddTransient<QueryTerminalDbConnection<SqlConnection>, SqlQueryTerminalDbConnection>();
-        services.AddTransient<QueryTerminalDbConnection<SqliteConnection>, SqliteQueryTerminalDbConnection>();
+        services.AddKeyedSingleton<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
+        services.AddKeyedSingleton<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
 
         services.AddSingleton<SqliteExtensionProvider>();
 
-        services.AddTransient<DotCommandHandler<SqlConnection>>();
-        services.AddTransient<DotCommandHandler<SqliteConnection>>();
+        services.AddSingleton<DotCommandHandler>();
 
-        services.AddTransient<QueryTerminalPrompt>();
+        services.AddSingleton<QueryTerminalPrompt>();
 
-        services.AddKeyedSingleton<IRootCommandHandler, RootCommandHandler<SqlConnection>>("mssql");
-        services.AddKeyedSingleton<IRootCommandHandler, RootCommandHandler<SqliteConnection>>("sqlite");
+        services.AddSingleton<RootCommandHandler>();
 
         // Configure command and options
         var rootCommand = new RootCommand("Connect and run commands against databases");
@@ -79,7 +77,7 @@ class Program
             
             var cancellationToken = context.GetCancellationToken();
 
-            var handler = serviceProvider.GetRequiredKeyedService<IRootCommandHandler>(dbType);
+            var handler = serviceProvider.GetRequiredService<RootCommandHandler>();
             await handler.Run(cancellationToken);
         });
 

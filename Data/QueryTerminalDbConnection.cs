@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace QueryTerminal.Data;
 
-public abstract class QueryTerminalDbConnection<TConnection> : IAsyncDisposable where TConnection : DbConnection, new()
+public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbConnection where TConnection : DbConnection, new()
 {
     protected TConnection _connection;
 

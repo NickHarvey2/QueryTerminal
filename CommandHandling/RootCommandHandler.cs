@@ -8,9 +8,10 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class RootCommandHandler<TConnection> : IRootCommandHandler where TConnection : DbConnection, new()
+public class RootCommandHandler
 {
     private IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
     private IOutputFormatter _outputFormatter;
     private string? _query;
     private bool _terminate = false;
@@ -18,6 +19,7 @@ public class RootCommandHandler<TConnection> : IRootCommandHandler where TConnec
     public RootCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
+        _configuration = configuration;
         _query = configuration["query"];
         SetOutputFormatByName(configuration["outputFormat"]);
     }
@@ -41,12 +43,12 @@ public class RootCommandHandler<TConnection> : IRootCommandHandler where TConnec
 
     public async Task Run(CancellationToken cancellationToken)
     {
-        await using var connection = _serviceProvider.GetRequiredService<QueryTerminalDbConnection<TConnection>>();
+        await using var connection = _serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(_configuration["type"]);
         await connection.ConnectAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(_query))
         {
-            await using var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandler<TConnection>>();
+            await using var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandler>();
             await dotCommandHandler.Initialize(cancellationToken);
             await using var prompt = _serviceProvider.GetRequiredService<QueryTerminalPrompt>();
             while (!_terminate)
