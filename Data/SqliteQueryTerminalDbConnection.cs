@@ -9,9 +9,9 @@ public class SqliteQueryTerminalDbConnection : QueryTerminalDbConnection<SqliteC
 
     public SqliteQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
 
-    public override async Task ConnectAsync(CancellationToken cancellationToken)
+    public override async Task OpenAsync(CancellationToken cancellationToken)
     {
-        await base.ConnectAsync(cancellationToken);
+        await base.OpenAsync(cancellationToken);
         // foreach (var extension in _extensionProvider.GetExtensions())
         // {
         //     _connection.LoadExtension(extension);

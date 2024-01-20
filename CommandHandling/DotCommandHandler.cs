@@ -31,9 +31,9 @@ public class DotCommandHandler : IAsyncDisposable
         }
     );
 
-    public async Task Initialize(CancellationToken cancellationToken)
+    public async Task OpenAsync(CancellationToken cancellationToken)
     {
-        await _connection.ConnectAsync(cancellationToken);
+        await _connection.OpenAsync(cancellationToken);
     }
 
     public async Task Handle(string commandText, CancellationToken cancellationToken)

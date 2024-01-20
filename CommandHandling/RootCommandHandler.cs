@@ -38,15 +38,15 @@ public class RootCommandHandler
         _terminate = true;
     }
 
-    public async Task Run(CancellationToken cancellationToken)
+    public async Task RunAsync(CancellationToken cancellationToken)
     {
         await using var connection = _serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(_configuration["type"]);
-        await connection.ConnectAsync(cancellationToken);
+        await connection.OpenAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(_configuration["query"]))
         {
             await using var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandler>();
-            await dotCommandHandler.Initialize(cancellationToken);
+            await dotCommandHandler.OpenAsync(cancellationToken);
             await using var prompt = _serviceProvider.GetRequiredService<QueryTerminalPrompt>();
             while (!_terminate)
             {

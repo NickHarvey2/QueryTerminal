@@ -13,7 +13,7 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
         _connection.ConnectionString = configuration["connectionString"];
     }
 
-    public virtual async Task ConnectAsync(CancellationToken cancellationToken)
+    public virtual async Task OpenAsync(CancellationToken cancellationToken)
     {
         await _connection.OpenAsync(cancellationToken);
     }

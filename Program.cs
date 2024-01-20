@@ -71,7 +71,7 @@ class Program
             var cancellationToken = context.GetCancellationToken();
 
             var handler = serviceProvider.GetRequiredService<RootCommandHandler>();
-            await handler.Run(cancellationToken);
+            await handler.RunAsync(cancellationToken);
         });
 
         // Execution and error handling
