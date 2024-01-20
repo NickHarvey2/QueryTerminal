@@ -1,11 +1,10 @@
 ﻿using System.CommandLine;
-using Microsoft.Data.SqlClient;
 using QueryTerminal.CommandHandling;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
-using Microsoft.Data.Sqlite;
 using QueryTerminal.Data;
 using QueryTerminal.Prompting;
+using Microsoft.Extensions.Configuration;
 
 namespace QueryTerminal;
 
@@ -16,20 +15,16 @@ class Program
         // configure service collection
         var services = new ServiceCollection();
 
-        services.AddKeyedTransient<HandlerExecutor>("mssql", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqlConnection>(sqlQuery,cancellationToken));
-        services.AddKeyedTransient<HandlerExecutor>("sqlite", (serviceProvider,serviceKey) => (handler,sqlQuery,cancellationToken) => handler.Run<SqliteConnection>(sqlQuery,cancellationToken));
-
-        services.AddTransient<QueryTerminalDbConnection<SqlConnection>, SqlQueryTerminalDbConnection>();
-        services.AddTransient<QueryTerminalDbConnection<SqliteConnection>, SqliteQueryTerminalDbConnection>();
+        services.AddKeyedTransient<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
+        services.AddKeyedTransient<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
 
         services.AddSingleton<SqliteExtensionProvider>();
 
-        services.AddTransient<DotCommandHandlerFactory<SqlConnection>>();
-        services.AddTransient<DotCommandHandlerFactory<SqliteConnection>>();
+        services.AddTransient<DotCommandHandler>();
 
-        services.AddTransient<QueryTerminalPrompt>();
+        services.AddSingleton<QueryTerminalPrompt>();
 
-        var serviceProvider = services.BuildServiceProvider();
+        services.AddSingleton<RootCommandHandler>();
 
         // Configure command and options
         var rootCommand = new RootCommand("Connect and run commands against databases");
@@ -63,12 +58,21 @@ class Program
         outputFormatOption.AddAlias("-o");
         rootCommand.AddOption(outputFormatOption);
 
-        rootCommand.SetHandler<string,string,string,string>(async (cancellationToken, serviceProvider, dbType, connectionString, sqlQuery, outputFormatName) => {
-            var handler = new RootCommandHandler(connectionString, serviceProvider);
-            handler.SetOutputFormatByName(outputFormatName);
-            var executor = serviceProvider.GetRequiredKeyedService<HandlerExecutor>(dbType);
-            await executor.Invoke(handler, sqlQuery, cancellationToken);
-        }, serviceProvider, databaseTypeOption, connectionStringOption, sqlQueryOption, outputFormatOption);
+        rootCommand.SetHandler(async context => {
+            var dbType = context.ParseResult.GetValueForOption(databaseTypeOption);
+
+            var configurationBuilder = new ConfigurationBuilder();
+            configurationBuilder.AddInMemoryCollection(
+                rootCommand.Options.Select(option => new KeyValuePair<string, string?>(option.Name.Replace("--",""), context.ParseResult.GetValueForOption(option) as string))
+            );
+            services.AddSingleton<IConfiguration>(configurationBuilder.Build());
+            var serviceProvider = services.BuildServiceProvider();
+            
+            var cancellationToken = context.GetCancellationToken();
+
+            var handler = serviceProvider.GetRequiredService<RootCommandHandler>();
+            await handler.Run(cancellationToken);
+        });
 
         // Execution and error handling
         try {

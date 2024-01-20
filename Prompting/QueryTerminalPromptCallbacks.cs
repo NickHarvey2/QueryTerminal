@@ -18,14 +18,14 @@ internal class QueryTerminalPromptCallbacks : PromptCallbacks
     // }
 
     // TODO: implement this stub
-    protected override async Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
+    protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
     {
-        return Enumerable.Empty<CompletionItem>().ToImmutableList();
+        return Task.FromResult<IReadOnlyList<CompletionItem>>(Enumerable.Empty<CompletionItem>().ToImmutableList());
     }
 
-    protected override async Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
+    protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
     {
-        return EnumerateFormatSpans(text).ToImmutableList();
+        return Task.FromResult<IReadOnlyCollection<FormatSpan>>(EnumerateFormatSpans(text).ToImmutableList());
     }
 
     private static IEnumerable<FormatSpan> EnumerateFormatSpans(string text)
@@ -44,30 +44,32 @@ internal class QueryTerminalPromptCallbacks : PromptCallbacks
 
     private static readonly string[] Keywords = new[]
     {
-        "SELECT",
-        "FROM",
-        "AS",
-        "GROUP BY",
-        "ORDER BY",
-        "DESC",
-        "ASC",
-        "IN",
-        "AND",
-        "OR",
-        "NOT",
-        "LIKE",
-        "INNER JOIN",
-        "JOIN",
-        "LEFT OUTER JOIN",
-        "LEFT JOIN",
-        "RIGHT OUTER JOIN",
-        "RIGHT JOIN",
-        "FULL OUTER JOIN",
-        "OUTER JOIN",
-        "ON",
+        "SELECT ",
+        "FROM ",
+        "WHERE ",
+        "AS ",
+        "GROUP BY ",
+        "ORDER BY ",
+        " DESC",
+        " ASC",
+        "IN ",
+        "AND ",
+        "OR ",
+        "NOT ",
+        "LIKE ",
+        "INNER JOIN ",
+        "JOIN ",
+        "LEFT OUTER JOIN ",
+        "LEFT JOIN ",
+        "RIGHT OUTER JOIN ",
+        "RIGHT JOIN ",
+        "FULL OUTER JOIN ",
+        "OUTER JOIN ",
+        " ON ",
         "(",
         ")",
         "=",
+        "!=",
     };
 
 }

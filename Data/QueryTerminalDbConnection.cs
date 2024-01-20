@@ -1,19 +1,20 @@
 using System.Data.Common;
+using Microsoft.Extensions.Configuration;
 
 namespace QueryTerminal.Data;
 
-public abstract class QueryTerminalDbConnection<TConnection> : IAsyncDisposable where TConnection : DbConnection, new()
+public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbConnection where TConnection : DbConnection, new()
 {
     protected TConnection _connection;
 
-    public QueryTerminalDbConnection()
+    public QueryTerminalDbConnection(IConfiguration configuration)
     {
         _connection = new TConnection();
+        _connection.ConnectionString = configuration["connectionString"];
     }
 
-    public virtual async Task ConnectAsync(string connectionString, CancellationToken cancellationToken)
+    public virtual async Task ConnectAsync(CancellationToken cancellationToken)
     {
-        _connection.ConnectionString = connectionString;
         await _connection.OpenAsync(cancellationToken);
     }
 

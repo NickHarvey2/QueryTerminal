@@ -1,9 +1,12 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace QueryTerminal.Data;
 
 public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnection>
 {
+    public SqlQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
+
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {
         var commandText = $"SELECT COLUMN_NAME,DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='{tableName}'";

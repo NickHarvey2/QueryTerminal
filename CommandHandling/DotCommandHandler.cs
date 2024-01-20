@@ -1,21 +1,22 @@
 using System.Collections.Immutable;
-using System.Data.Common;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
 using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class DotCommandHandler<TConnection> where TConnection : DbConnection, new()
+public class DotCommandHandler : IAsyncDisposable
 {
     private readonly RootCommandHandler _rootCommandHandler;
-    private readonly QueryTerminalDbConnection<TConnection> _connection;
+    private readonly IQueryTerminalDbConnection _connection;
     private readonly IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> _dotCommands;
 
-    public DotCommandHandler(RootCommandHandler rootCommandHandler, QueryTerminalDbConnection<TConnection> connection)
+    public DotCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
     {
-        _rootCommandHandler = rootCommandHandler;
-        _connection = connection;
+        _rootCommandHandler = serviceProvider.GetRequiredService<RootCommandHandler>();
+        _connection = serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(configuration["type"]);
         _dotCommands = BuildDotCommands();
     }
 
@@ -30,6 +31,11 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection, ne
         }
     );
 
+    public async Task Initialize(CancellationToken cancellationToken)
+    {
+        await _connection.ConnectAsync(cancellationToken);
+    }
+
     public async Task Handle(string commandText, CancellationToken cancellationToken)
     {
         var tokens = commandText.Split(' ');
@@ -40,9 +46,10 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection, ne
         await _dotCommands[tokens.First()](tokens.Skip(1).ToImmutableArray(), cancellationToken);
     }
 
-    public async Task Exit(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task Exit(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.Terminate();
+        return Task.CompletedTask;
     }
 
     public async Task ListTables(ImmutableArray<string> args, CancellationToken cancellationToken)
@@ -74,7 +81,7 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection, ne
         AnsiConsole.Write(table);
     }
 
-    public async Task ListOutputFormats(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task ListOutputFormats(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
@@ -83,18 +90,26 @@ public class DotCommandHandler<TConnection> where TConnection : DbConnection, ne
             table.AddRow(outputFormat.Name, outputFormat.Description);
         }
         AnsiConsole.Write(table);
+        return Task.CompletedTask;
     }
 
-    public async Task GetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task GetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
         table.AddRow(_rootCommandHandler.OutputFormatter.Name, _rootCommandHandler.OutputFormatter.Description);
         AnsiConsole.Write(table);
+        return Task.CompletedTask;
     }
 
-    public async Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
     {
         _rootCommandHandler.SetOutputFormatByName(args[0]);
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _connection.DisposeAsync();
     }
 }
