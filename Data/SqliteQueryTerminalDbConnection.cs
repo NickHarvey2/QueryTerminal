@@ -5,17 +5,12 @@ namespace QueryTerminal.Data;
 
 public class SqliteQueryTerminalDbConnection : QueryTerminalDbConnection<SqliteConnection>
 {
-    private SqliteExtensionProvider _extensionProvider;
-
     public SqliteQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
 
     public override async Task OpenAsync(CancellationToken cancellationToken)
     {
         await base.OpenAsync(cancellationToken);
-        // foreach (var extension in _extensionProvider.GetExtensions())
-        // {
-        //     _connection.LoadExtension(extension);
-        // }
+        // Load extensions here
     }
     
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)

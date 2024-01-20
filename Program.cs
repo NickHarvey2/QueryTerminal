@@ -18,8 +18,6 @@ class Program
         services.AddKeyedTransient<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
         services.AddKeyedTransient<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
 
-        services.AddSingleton<SqliteExtensionProvider>();
-
         services.AddTransient<DotCommandHandler>();
 
         services.AddSingleton<QueryTerminalPrompt>();
