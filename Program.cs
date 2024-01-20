@@ -1,9 +1,7 @@
 ﻿using System.CommandLine;
-using Microsoft.Data.SqlClient;
 using QueryTerminal.CommandHandling;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
-using Microsoft.Data.Sqlite;
 using QueryTerminal.Data;
 using QueryTerminal.Prompting;
 using Microsoft.Extensions.Configuration;
@@ -12,11 +10,6 @@ namespace QueryTerminal;
 
 class Program
 {
-    private static readonly IDictionary<string, Type> dbTypes = new Dictionary<string, Type> {
-        {"mssql", typeof(SqlConnection)},
-        {"sqlite", typeof(SqliteConnection)}
-    };
-
     static async Task<int> Main(string[] args)
     {
         // configure service collection
