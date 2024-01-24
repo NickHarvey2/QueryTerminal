@@ -28,7 +28,6 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 
     private readonly static Regex _numericLiteralRx = new Regex(
         @"(?<!')\b(?<num_literal>\d+)\b(?!')",
-        // @"\W(?<num_literal>\d+)(\W|$)", 
         RegexOptions.IgnoreCase 
         | RegexOptions.CultureInvariant 
         | RegexOptions.ExplicitCapture 

@@ -37,7 +37,7 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
     protected static IEnumerable<string> _keywordPatterns = new string[]{
         @"(^|\()\s*(?<keyword>select)\W",            // SELECT
         @"(^|\()\s*(?<keyword>select\s+distinct)\W", // SELECT DISTINCT
-        @"(^|\()\s*(?<keyword>as)\W",                // AS
+        @"\W(?<keyword>as)\W",                       // AS
         @"\W(?<keyword>from)\W",                     // FROM
         @"\W(?<keyword>cross\s+join)\W",             // CROSS JOIN
         @"\W(?<keyword>inner\s+join)\W",             // INNER JOIN
