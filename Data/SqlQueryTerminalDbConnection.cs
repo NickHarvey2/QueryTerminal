@@ -6,6 +6,12 @@ namespace QueryTerminal.Data;
 public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnection>
 {
     public SqlQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
+    
+    private new static IEnumerable<string> _keywordPatterns = new string[]{
+        @"(^|\()(?<keyword>top)\W",           // TOP
+    };
+
+    protected override IEnumerable<string> KeywordPatterns { get => _keywordPatterns.Concat(QueryTerminalDbConnection<SqlConnection>._keywordPatterns); }
 
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {

@@ -13,6 +13,12 @@ public class SqliteQueryTerminalDbConnection : QueryTerminalDbConnection<SqliteC
         // Load extensions here
     }
     
+    private new static IEnumerable<string> _keywordPatterns = new string[]{
+        @"(^|\()(?<keyword>limit)\W",         // LIMIT
+    };
+
+    protected override IEnumerable<string> KeywordPatterns { get => _keywordPatterns.Concat(QueryTerminalDbConnection<SqliteConnection>._keywordPatterns); }
+    
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {
         var commandText = $"SELECT name,type FROM PRAGMA_TABLE_INFO('{tableName}')";

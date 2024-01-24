@@ -21,6 +21,7 @@ class Program
         services.AddTransient<DotCommandHandler>();
 
         services.AddSingleton<QueryTerminalPrompt>();
+        services.AddSingleton<QueryTerminalPromptCallbacks>();
 
         services.AddSingleton<RootCommandHandler>();
 
