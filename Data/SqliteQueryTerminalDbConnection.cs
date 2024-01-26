@@ -14,10 +14,16 @@ public class SqliteQueryTerminalDbConnection : QueryTerminalDbConnection<SqliteC
     }
     
     private new static IEnumerable<string> _keywordPatterns = new string[]{
-        @"(^|\()(?<keyword>limit)\W",         // LIMIT
+        @"\W(?<keyword>limit)\W",         // LIMIT
+    };
+    private new static IEnumerable<string> _functionPatterns = new string[]{
+        @"\W(?<function>substr)\W",       // SUBSTR
+        @"\W(?<function>length)\W",       // LENGTH
+        @"\W(?<function>group_concat)\W", // GROUP_CONCAT
     };
 
     protected override IEnumerable<string> KeywordPatterns { get => _keywordPatterns.Concat(QueryTerminalDbConnection<SqliteConnection>._keywordPatterns); }
+    protected override IEnumerable<string> FunctionPatterns { get => _functionPatterns.Concat(QueryTerminalDbConnection<SqliteConnection>._functionPatterns); }
     
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {

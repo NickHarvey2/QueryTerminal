@@ -46,6 +46,19 @@ public static class OutputFormat
         includeHeaders: false
     );
 
+    public static readonly IOutputFormatter Wsv = new TableOutputFormatter(
+        name: "wsv",
+        description: "Whitespace Separated Values",
+        border: "none"
+    );
+
+    public static readonly IOutputFormatter WsvNoHeaders = new TableOutputFormatter(
+        name: "wsv-noheaders",
+        description: "Whitespace Separated Values",
+        border: "none",
+        includeHeaders: false
+    );
+
     public static readonly IOutputFormatter Json = new JsonOutputFormatter(
         name: "json",
         description: "JSON format, minified and with no syntax highlights",

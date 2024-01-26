@@ -8,10 +8,16 @@ public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnect
     public SqlQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
     
     private new static IEnumerable<string> _keywordPatterns = new string[]{
-        @"(^|\()(?<keyword>top)\W",           // TOP
+        @"\W(?<keyword>top)\W",           // TOP
+    };
+    private new static IEnumerable<string> _functionPatterns = new string[]{
+        @"\W(?<function>substring)\W",    // SUBSTRING
+        @"\W(?<function>len)\W",          // LEN
+        @"\W(?<function>string_agg)\W",   // STRING_AGG
     };
 
     protected override IEnumerable<string> KeywordPatterns { get => _keywordPatterns.Concat(QueryTerminalDbConnection<SqlConnection>._keywordPatterns); }
+    protected override IEnumerable<string> FunctionPatterns { get => _functionPatterns.Concat(QueryTerminalDbConnection<SqlConnection>._functionPatterns); }
 
     public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {

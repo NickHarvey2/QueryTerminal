@@ -14,9 +14,13 @@ namespace QueryTerminal.Prompting;
 public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 {
     private readonly IQueryTerminalDbConnection _connection;
-    private readonly static AnsiColor _keywordColor = AnsiColor.Blue;
-    private readonly static AnsiColor _numericLiteralColor = AnsiColor.Magenta;
-    private readonly static AnsiColor _stringLiteralColor = AnsiColor.Green;
+
+    private readonly static AnsiColor _keywordColor        = AnsiColor.Magenta;
+    private readonly static AnsiColor _numericLiteralColor = AnsiColor.Red;
+    private readonly static AnsiColor _stringLiteralColor  = AnsiColor.Green;
+    private readonly static AnsiColor _functionColor       = AnsiColor.Blue;
+    private readonly static AnsiColor _tableColor          = AnsiColor.Yellow;
+    private readonly static AnsiColor _columnColor         = AnsiColor.BrightYellow;
 
     private readonly static Regex _stringLiteralRx = new Regex(
         @"(\W(?<string_literal>'(?:[^']|'')*')(\W|$))|(\W(?<string_literal>'(?:[^']|'')*)$)",
@@ -28,9 +32,9 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 
     private readonly static Regex _numericLiteralRx = new Regex(
         @"(?<!')\b(?<num_literal>\d+)\b(?!')",
-        RegexOptions.IgnoreCase 
-        | RegexOptions.CultureInvariant 
-        | RegexOptions.ExplicitCapture 
+        RegexOptions.IgnoreCase
+        | RegexOptions.CultureInvariant
+        | RegexOptions.ExplicitCapture
         | RegexOptions.Compiled
     );
 
@@ -59,6 +63,11 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 
     protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
     {
+        var functionFormatSpans = _connection.FunctionsRx.Matches(text).Select(match => {
+            var function = match.Groups["function"];
+            return new FormatSpan(function.Index, function.Length, _functionColor);
+        });
+
         var keywordFormatSpans = _connection.KeywordsRx.Matches(text).Select(match => {
             var keyword = match.Groups["keyword"];
             return new FormatSpan(keyword.Index, keyword.Length, _keywordColor);
@@ -76,6 +85,7 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 
         return Task.FromResult<IReadOnlyCollection<FormatSpan>>(
             keywordFormatSpans
+            .Concat(functionFormatSpans)
             .Concat(numericLiteralFormatSpans)
             .Concat(stringLiteralFormatSpans)
             .ToImmutableList()

@@ -8,6 +8,7 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
 {
     protected TConnection _connection;
     private readonly Regex _keywordsRx;
+    private readonly Regex _functionsRx;
 
     public QueryTerminalDbConnection(IConfiguration configuration)
     {
@@ -18,6 +19,13 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
             RegexOptions.IgnoreCase 
             | RegexOptions.CultureInvariant 
             | RegexOptions.ExplicitCapture 
+            | RegexOptions.Compiled
+        );
+        _functionsRx = new Regex(
+            $@"({string.Join(")|(", FunctionPatterns)})",
+            RegexOptions.IgnoreCase
+            | RegexOptions.CultureInvariant
+            | RegexOptions.ExplicitCapture
             | RegexOptions.Compiled
         );
     }
@@ -69,8 +77,16 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
         @"\W(?<keyword>is\s+null)(\W|$)",            // IS NULL
         @"\W(?<keyword>is\s+not\s+null)(\W|$)",      // IS NOT NULL
     };
+
+    protected static IEnumerable<string> _functionPatterns = new string[]{
+        @"\W(?<function>max)\W",                     // MAX
+        @"\W(?<function>min)\W",                     // MIN
+    };
+
     protected abstract IEnumerable<string> KeywordPatterns { get; }
+    protected abstract IEnumerable<string> FunctionPatterns { get; }
     public Regex KeywordsRx { get => _keywordsRx; }
+    public Regex FunctionsRx { get => _functionsRx; }
 
     public abstract Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken);
     public abstract Task<IEnumerable<DbTable>> GetTablesAsync(CancellationToken cancellationToken);

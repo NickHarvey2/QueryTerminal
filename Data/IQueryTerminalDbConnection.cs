@@ -10,4 +10,5 @@ public interface IQueryTerminalDbConnection : IAsyncDisposable
     public Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken);
     public Task<IEnumerable<DbTable>> GetTablesAsync(CancellationToken cancellationToken);
     public Regex KeywordsRx { get; }
+    public Regex FunctionsRx { get; }
 }

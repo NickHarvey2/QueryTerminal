@@ -8,12 +8,14 @@ public class TableOutputFormatter : IOutputFormatter
     private readonly string _border;
     private readonly string _name;
     private readonly string _description;
+    private readonly bool _includeHeaders;
 
-    public TableOutputFormatter(string name, string description, string border = "square")
+    public TableOutputFormatter(string name, string description, string border = "square", bool includeHeaders = true)
     {
         _border = border;
         _name = name;
         _description = description;
+        _includeHeaders = includeHeaders;
     }
 
     public string Name => _name;
@@ -32,6 +34,11 @@ public class TableOutputFormatter : IOutputFormatter
             table.AddColumns(Enumerable.Range(0, reader.FieldCount).Select(i => new TableColumn(reader.GetName(i))).ToArray());
         }
 
+        if (!_includeHeaders)
+        {
+            table.HideHeaders();
+        }
+
         while (reader.Read())
         {
             object[] row = new object[reader.FieldCount];
@@ -42,6 +49,7 @@ public class TableOutputFormatter : IOutputFormatter
         {
             case "none":
                 table.NoBorder();
+                table.Columns.ForEach(col => col.PadRight(2));
                 break;
             case "markdown":
                 table.MarkdownBorder();
