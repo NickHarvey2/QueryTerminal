@@ -40,7 +40,7 @@ public class RootCommandHandler
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        await using var connection = _serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(_configuration["type"]);
+        await using var connection = _serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
         await connection.OpenAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(_configuration["query"]))

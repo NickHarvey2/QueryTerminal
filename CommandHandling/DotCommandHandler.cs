@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
@@ -13,10 +12,10 @@ public class DotCommandHandler : IAsyncDisposable
     private readonly IQueryTerminalDbConnection _connection;
     private readonly IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> _dotCommands;
 
-    public DotCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
+    public DotCommandHandler(IServiceProvider serviceProvider)
     {
         _rootCommandHandler = serviceProvider.GetRequiredService<RootCommandHandler>();
-        _connection = serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(configuration["type"]);
+        _connection = serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
         _dotCommands = BuildDotCommands();
     }
 

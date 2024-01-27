@@ -17,6 +17,7 @@ class Program
 
         services.AddKeyedTransient<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
         services.AddKeyedTransient<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
+        services.AddTransient<IQueryTerminalDbConnection>(serviceProvider => serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(serviceProvider.GetRequiredService<IConfiguration>()["type"]));
 
         services.AddTransient<DotCommandHandler>();
 
@@ -57,16 +58,17 @@ class Program
         outputFormatOption.AddAlias("-o");
         rootCommand.AddOption(outputFormatOption);
 
-        rootCommand.SetHandler(async context => {
+        rootCommand.SetHandler(async context =>
+        {
             var dbType = context.ParseResult.GetValueForOption(databaseTypeOption);
 
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(
-                rootCommand.Options.Select(option => new KeyValuePair<string, string?>(option.Name.Replace("--",""), context.ParseResult.GetValueForOption(option) as string))
+                rootCommand.Options.Select(option => new KeyValuePair<string, string?>(option.Name.Replace("--", ""), context.ParseResult.GetValueForOption(option) as string))
             );
             services.AddSingleton<IConfiguration>(configurationBuilder.Build());
             var serviceProvider = services.BuildServiceProvider();
-            
+
             var cancellationToken = context.GetCancellationToken();
 
             var handler = serviceProvider.GetRequiredService<RootCommandHandler>();
@@ -74,7 +76,8 @@ class Program
         });
 
         // Execution and error handling
-        try {
+        try
+        {
             await rootCommand.InvokeAsync(args);
         }
         catch (OperationCanceledException)

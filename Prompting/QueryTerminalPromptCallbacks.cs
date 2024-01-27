@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PrettyPrompt;
 using PrettyPrompt.Completion;
@@ -38,9 +37,9 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         | RegexOptions.Compiled
     );
 
-    public QueryTerminalPromptCallbacks(IServiceProvider serviceProvider, IConfiguration configuration)
+    public QueryTerminalPromptCallbacks(IServiceProvider serviceProvider)
     {
-        _connection = serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(configuration["type"]);
+        _connection = serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
     }
 
     // TODO: Reverse search
