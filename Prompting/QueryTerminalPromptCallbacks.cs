@@ -63,6 +63,10 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 
     protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
     {
+        // Depending on if I find I need it, memoization might be useful to optimize this
+        // because the vast majority of changes to `text` are going to be by a single character, often at the end of the string
+        // so if we cache the results and only recalculate the FormatSpans that intersect a changed region, that will save us some
+        // operations
         var functionFormatSpans = _connection.FunctionsRx.Matches(text).Select(match => {
             var function = match.Groups["function"];
             return new FormatSpan(function.Index, function.Length, _functionColor);

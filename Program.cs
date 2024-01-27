@@ -20,8 +20,8 @@ class Program
 
         services.AddTransient<DotCommandHandler>();
 
-        services.AddSingleton<QueryTerminalPrompt>();
-        services.AddSingleton<QueryTerminalPromptCallbacks>();
+        services.AddTransient<QueryTerminalPrompt>();
+        services.AddTransient<QueryTerminalPromptCallbacks>();
 
         services.AddSingleton<RootCommandHandler>();
 
