@@ -1,4 +1,5 @@
 using PrettyPrompt;
+using PrettyPrompt.Consoles;
 using PrettyPrompt.Highlighting;
 
 namespace QueryTerminal.Prompting;
@@ -17,6 +18,12 @@ public class QueryTerminalPrompt : IAsyncDisposable
             callbacks: _promptCallbacks,
             configuration: new PromptConfiguration(
                 prompt: "> ",
+                keyBindings: new KeyBindings(
+                    newLine: new KeyPressPatterns(new KeyPressPattern(ConsoleKey.Enter)),
+                    submitPrompt: new KeyPressPatterns(
+                        new KeyPressPattern(ConsoleModifiers.Control, ConsoleKey.Enter)
+                    )
+                ),
                 // completionItemDescriptionPaneBackground: AnsiColor.Rgb(30, 30, 30),
                 // selectedCompletionItemBackground: AnsiColor.Rgb(30, 30, 30),
                 selectedTextBackground: AnsiColor.Rgb(20, 61, 102)
