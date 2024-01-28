@@ -6,6 +6,8 @@ namespace QueryTerminal.Data;
 
 public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbConnection where TConnection : DbConnection, new()
 {
+    private IEnumerable<DbTable> _tables;
+    private IDictionary<string,IEnumerable<DbColumn>> _columns;
     protected TConnection _connection;
     private readonly Regex _keywordsRx;
     private readonly Regex _functionsRx;
@@ -33,6 +35,13 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
     public virtual async Task OpenAsync(CancellationToken cancellationToken)
     {
         await _connection.OpenAsync(cancellationToken);
+        await RefreshAsync(cancellationToken);
+    }
+
+    public async Task RefreshAsync(CancellationToken cancellationToken)
+    {
+        await CacheTablesAsync(cancellationToken);
+        await CacheColumnsAsync(cancellationToken);
     }
 
     public async Task<DbDataReader> ExecuteQueryAsync(string commandText, CancellationToken cancellationToken)
@@ -88,8 +97,23 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
     public Regex KeywordsRx { get => _keywordsRx; }
     public Regex FunctionsRx { get => _functionsRx; }
 
-    public abstract Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken);
-    public abstract Task<IEnumerable<DbTable>> GetTablesAsync(CancellationToken cancellationToken);
+    public IEnumerable<DbColumn> GetColumns(string tableName) => _columns[tableName];
+    protected abstract Task<IEnumerable<DbColumn>> FetchColumnsAsync(string tableName, CancellationToken cancellationToken);
+    private async Task CacheColumnsAsync(CancellationToken cancellationToken)
+    {
+        _columns = new Dictionary<string, IEnumerable<DbColumn>>();
+        foreach (var table in _tables)
+        {
+            _columns.Add(table.Name, await FetchColumnsAsync(table.Name, cancellationToken));
+        }
+    }
+
+    public IEnumerable<DbTable> GetTables() => _tables;
+    protected abstract Task<IEnumerable<DbTable>> FetchTablesAsync(CancellationToken cancellationToken);
+    private async Task CacheTablesAsync(CancellationToken cancellationToken)
+    {
+        _tables = await FetchTablesAsync(cancellationToken);
+    }
 
     public async ValueTask DisposeAsync()
     {

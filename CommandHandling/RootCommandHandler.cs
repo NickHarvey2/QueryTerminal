@@ -65,7 +65,7 @@ public class RootCommandHandler
                 {
                     if (query.StartsWith("."))
                     {
-                        await dotCommandHandler.Handle(query, cancellationToken);
+                        dotCommandHandler.Handle(query);
                     }
                     else
                     {
