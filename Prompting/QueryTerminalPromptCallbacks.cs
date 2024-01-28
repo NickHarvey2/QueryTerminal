@@ -42,6 +42,11 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         _connection = serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
     }
 
+    public async Task OpenAsync(CancellationToken cancellationToken)
+    {
+        await _connection.OpenAsync(cancellationToken);
+    }
+
     // TODO: Reverse search
     protected override IEnumerable<(KeyPressPattern Pattern, KeyPressCallbackAsync Callback)> GetKeyPressCallbacks()
     {

@@ -48,6 +48,7 @@ public class RootCommandHandler
             await using var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandler>();
             await dotCommandHandler.OpenAsync(cancellationToken);
             await using var prompt = _serviceProvider.GetRequiredService<QueryTerminalPrompt>();
+            await prompt.OpenAsync(cancellationToken);
             while (!_terminate)
             {
                 var result = await prompt.ReadLineAsync();

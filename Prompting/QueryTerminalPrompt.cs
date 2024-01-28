@@ -9,8 +9,8 @@ public class QueryTerminalPrompt : IAsyncDisposable
     private readonly static string _persistentHistoryFilepath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".queryterm.hist");
 
     private readonly static KeyBindings _keyBindings = new KeyBindings(
-        newLine:      new KeyPressPatterns(new KeyPressPattern(ConsoleKey.Enter)),                          // soft newline on Enter keypress
-        submitPrompt: new KeyPressPatterns(new KeyPressPattern(ConsoleModifiers.Control, ConsoleKey.Enter)) // submit on Ctrl-Enter keypress
+        newLine:      new KeyPressPatterns(new KeyPressPattern(ConsoleKey.Enter)),
+        submitPrompt: new KeyPressPatterns(new KeyPressPattern(ConsoleModifiers.Control, ConsoleKey.Enter))
     );
 
     private readonly static PromptConfiguration _promptConfiguration = new PromptConfiguration(
@@ -30,6 +30,11 @@ public class QueryTerminalPrompt : IAsyncDisposable
             callbacks: _promptCallbacks,
             configuration: _promptConfiguration
         );
+    }
+
+    public async Task OpenAsync(CancellationToken cancellationToken)
+    {
+        await _promptCallbacks.OpenAsync(cancellationToken);
     }
 
     public async Task<PromptResult> ReadLineAsync()
