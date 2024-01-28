@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.DependencyInjection;
 using PrettyPrompt;
 using PrettyPrompt.Completion;
 using PrettyPrompt.Consoles;
@@ -37,9 +36,9 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         | RegexOptions.Compiled
     );
 
-    public QueryTerminalPromptCallbacks(IServiceProvider serviceProvider)
+    public QueryTerminalPromptCallbacks(IQueryTerminalDbConnection connection)
     {
-        _connection = serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
+        _connection = connection;
     }
 
     public async Task OpenAsync(CancellationToken cancellationToken)
