@@ -14,11 +14,11 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
     private readonly IQueryTerminalDbConnection _connection;
 
     private readonly static AnsiColor _keywordColor        = AnsiColor.Magenta;
-    private readonly static AnsiColor _numericLiteralColor = AnsiColor.Red;
+    private readonly static AnsiColor _numericLiteralColor = AnsiColor.Rgb(255,177,0);
     private readonly static AnsiColor _stringLiteralColor  = AnsiColor.Green;
-    private readonly static AnsiColor _functionColor       = AnsiColor.Blue;
-    private readonly static AnsiColor _tableColor          = AnsiColor.Yellow;
-    private readonly static AnsiColor _columnColor         = AnsiColor.BrightYellow;
+    private readonly static AnsiColor _functionColor       = AnsiColor.Yellow;
+    private readonly static AnsiColor _tableColor          = AnsiColor.Blue;
+    private readonly static AnsiColor _columnColor         = AnsiColor.Cyan;
 
     private readonly static Regex _stringLiteralRx = new Regex(
         @"(\W(?<string_literal>'(?:[^']|'')*')(\W|$))|(\W(?<string_literal>'(?:[^']|'')*)$)",
@@ -27,6 +27,8 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         | RegexOptions.ExplicitCapture 
         | RegexOptions.Compiled
     );
+
+    int a = 3;
 
     private readonly static Regex _numericLiteralRx = new Regex(
         @"(?<!')\b(?<num_literal>\d+)\b(?!')",
@@ -90,11 +92,23 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
             return new FormatSpan(keyword.Index, keyword.Length, _stringLiteralColor);
         });
 
+        var tableFormatSpans = _connection.TablesRx?.Matches(text).Select(match => {
+            var function = match.Groups["table"];
+            return new FormatSpan(function.Index, function.Length, _tableColor);
+        }) ?? Enumerable.Empty<FormatSpan>();
+
+        var columnFormatSpans = _connection.ColumnsRx?.Matches(text).Select(match => {
+            var function = match.Groups["column"];
+            return new FormatSpan(function.Index, function.Length, _columnColor);
+        }) ?? Enumerable.Empty<FormatSpan>();
+
         return Task.FromResult<IReadOnlyCollection<FormatSpan>>(
             keywordFormatSpans
             .Concat(functionFormatSpans)
             .Concat(numericLiteralFormatSpans)
             .Concat(stringLiteralFormatSpans)
+            .Concat(tableFormatSpans)
+            .Concat(columnFormatSpans)
             .ToImmutableList()
         );
     }

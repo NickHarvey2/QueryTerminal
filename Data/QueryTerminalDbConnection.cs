@@ -6,11 +6,13 @@ namespace QueryTerminal.Data;
 
 public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbConnection where TConnection : DbConnection, new()
 {
-    private IEnumerable<DbTable> _tables;
-    private IDictionary<string,IEnumerable<DbColumn>> _columns;
+    private IEnumerable<DbTable>? _tables;
+    private IDictionary<string,IEnumerable<DbColumn>>? _columns;
     protected TConnection _connection;
     private readonly Regex _keywordsRx;
     private readonly Regex _functionsRx;
+    private Regex? _tablesRx;
+    private Regex? _columnsRx;
 
     public QueryTerminalDbConnection(IConfiguration configuration)
     {
@@ -42,6 +44,20 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
     {
         await CacheTablesAsync(cancellationToken);
         await CacheColumnsAsync(cancellationToken);
+        _tablesRx = new Regex(
+            $@"({string.Join(")|(", _tables.Select(table => $@"\W(?<table>{table.Name})\W"))})",
+            RegexOptions.IgnoreCase
+            | RegexOptions.CultureInvariant
+            | RegexOptions.ExplicitCapture
+            | RegexOptions.Compiled
+        );
+        _columnsRx = new Regex(
+            $@"({string.Join(")|(", _columns.Values.SelectMany(colSet => colSet.Select(col => $@"\W(?<column>{col.Name})\W")))})",
+            RegexOptions.IgnoreCase
+            | RegexOptions.CultureInvariant
+            | RegexOptions.ExplicitCapture
+            | RegexOptions.Compiled
+        );
     }
 
     public async Task<DbDataReader> ExecuteQueryAsync(string commandText, CancellationToken cancellationToken)
@@ -96,19 +112,25 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
     protected abstract IEnumerable<string> FunctionPatterns { get; }
     public Regex KeywordsRx { get => _keywordsRx; }
     public Regex FunctionsRx { get => _functionsRx; }
+    public Regex? TablesRx { get => _tablesRx; }
+    public Regex? ColumnsRx { get => _columnsRx; }
 
-    public IEnumerable<DbColumn> GetColumns(string tableName) => _columns[tableName];
+    public IEnumerable<DbColumn>? GetColumns(string tableName) => _columns?[tableName];
     protected abstract Task<IEnumerable<DbColumn>> FetchColumnsAsync(string tableName, CancellationToken cancellationToken);
     private async Task CacheColumnsAsync(CancellationToken cancellationToken)
     {
         _columns = new Dictionary<string, IEnumerable<DbColumn>>();
+        if (_tables is null)
+        {
+            return;
+        }
         foreach (var table in _tables)
         {
             _columns.Add(table.Name, await FetchColumnsAsync(table.Name, cancellationToken));
         }
     }
 
-    public IEnumerable<DbTable> GetTables() => _tables;
+    public IEnumerable<DbTable>? GetTables() => _tables;
     protected abstract Task<IEnumerable<DbTable>> FetchTablesAsync(CancellationToken cancellationToken);
     private async Task CacheTablesAsync(CancellationToken cancellationToken)
     {

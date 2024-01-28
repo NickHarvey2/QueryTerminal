@@ -56,7 +56,7 @@ public class RootCommandHandler
                 {
                     continue;
                 }
-                var query = result.Text;
+                var query = result.Text.Trim();
                 if (string.IsNullOrWhiteSpace(query))
                 {
                     continue;
