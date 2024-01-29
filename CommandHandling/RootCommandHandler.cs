@@ -40,7 +40,7 @@ public class RootCommandHandler
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        await using var connection = _serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(_configuration["type"]);
+        await using var connection = _serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
         await connection.OpenAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(_configuration["query"]))
@@ -48,6 +48,7 @@ public class RootCommandHandler
             await using var dotCommandHandler = _serviceProvider.GetRequiredService<DotCommandHandler>();
             await dotCommandHandler.OpenAsync(cancellationToken);
             await using var prompt = _serviceProvider.GetRequiredService<QueryTerminalPrompt>();
+            await prompt.OpenAsync(cancellationToken);
             while (!_terminate)
             {
                 var result = await prompt.ReadLineAsync();
@@ -55,7 +56,7 @@ public class RootCommandHandler
                 {
                     continue;
                 }
-                var query = result.Text;
+                var query = result.Text.Trim();
                 if (string.IsNullOrWhiteSpace(query))
                 {
                     continue;
@@ -64,7 +65,7 @@ public class RootCommandHandler
                 {
                     if (query.StartsWith("."))
                     {
-                        await dotCommandHandler.Handle(query, cancellationToken);
+                        dotCommandHandler.Handle(query);
                     }
                     else
                     {

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
@@ -11,23 +10,23 @@ public class DotCommandHandler : IAsyncDisposable
 {
     private readonly RootCommandHandler _rootCommandHandler;
     private readonly IQueryTerminalDbConnection _connection;
-    private readonly IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> _dotCommands;
+    private readonly IDictionary<string, Action<ImmutableArray<string>>> _dotCommands;
 
-    public DotCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
+    public DotCommandHandler(IServiceProvider serviceProvider)
     {
         _rootCommandHandler = serviceProvider.GetRequiredService<RootCommandHandler>();
-        _connection = serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(configuration["type"]);
+        _connection = serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
         _dotCommands = BuildDotCommands();
     }
 
-    private IDictionary<string, Func<ImmutableArray<string>, CancellationToken, Task>> BuildDotCommands() => ImmutableDictionary.CreateRange(
-        new KeyValuePair<string, Func<ImmutableArray<string>, CancellationToken, Task>>[] {
-            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".exit", Exit),
-            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".listTables", ListTables),
-            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".listColumns", ListColumns),
-            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".listOutputFormats", ListOutputFormats),
-            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".getOutputFormat", GetOutputFormat),
-            KeyValuePair.Create<string, Func<ImmutableArray<string>, CancellationToken, Task>>(".setOutputFormat", SetOutputFormat),
+    private IDictionary<string, Action<ImmutableArray<string>>> BuildDotCommands() => ImmutableDictionary.CreateRange(
+        new KeyValuePair<string, Action<ImmutableArray<string>>>[] {
+            KeyValuePair.Create<string, Action<ImmutableArray<string>>>(".exit", Exit),
+            KeyValuePair.Create<string, Action<ImmutableArray<string>>>(".listTables", ListTables),
+            KeyValuePair.Create<string, Action<ImmutableArray<string>>>(".listColumns", ListColumns),
+            KeyValuePair.Create<string, Action<ImmutableArray<string>>>(".listOutputFormats", ListOutputFormats),
+            KeyValuePair.Create<string, Action<ImmutableArray<string>>>(".getOutputFormat", GetOutputFormat),
+            KeyValuePair.Create<string, Action<ImmutableArray<string>>>(".setOutputFormat", SetOutputFormat),
         }
     );
 
@@ -36,25 +35,24 @@ public class DotCommandHandler : IAsyncDisposable
         await _connection.OpenAsync(cancellationToken);
     }
 
-    public async Task Handle(string commandText, CancellationToken cancellationToken)
+    public void Handle(string commandText)
     {
         var tokens = commandText.Split(' ');
         if (!_dotCommands.ContainsKey(tokens.First()))
         {
             throw new ArgumentException($"No command found matching {tokens.First()}");
         }
-        await _dotCommands[tokens.First()](tokens.Skip(1).ToImmutableArray(), cancellationToken);
+        _dotCommands[tokens.First()](tokens.Skip(1).ToImmutableArray());
     }
 
-    public Task Exit(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public void Exit(ImmutableArray<string> args)
     {
         _rootCommandHandler.Terminate();
-        return Task.CompletedTask;
     }
 
-    public async Task ListTables(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public void ListTables(ImmutableArray<string> args)
     {
-        var dbTables = await _connection.GetTablesAsync(cancellationToken);
+        var dbTables = _connection.GetTables();
         var table = new Table();
         table.AddColumns($"[bold blue]Name[/]", "[bold blue]Type[/]");
         foreach (var dbTable in dbTables)
@@ -64,14 +62,14 @@ public class DotCommandHandler : IAsyncDisposable
         AnsiConsole.Write(table);
     }
 
-    public async Task ListColumns(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public void ListColumns(ImmutableArray<string> args)
     {
         if (args.Length == 0)
         {
             Console.WriteLine("Required parameter missing: tableName");
             return;
         }
-        var dbColumns = await _connection.GetColumnsAsync(args[0], cancellationToken);
+        var dbColumns = _connection.GetColumns(args[0]);
         var table = new Table();
         table.AddColumns($"[bold blue]Name[/]", "[bold blue]Type[/]");
         foreach (var dbColumn in dbColumns)
@@ -81,7 +79,7 @@ public class DotCommandHandler : IAsyncDisposable
         AnsiConsole.Write(table);
     }
 
-    public Task ListOutputFormats(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public void ListOutputFormats(ImmutableArray<string> args)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
@@ -90,22 +88,19 @@ public class DotCommandHandler : IAsyncDisposable
             table.AddRow(outputFormat.Name, outputFormat.Description);
         }
         AnsiConsole.Write(table);
-        return Task.CompletedTask;
     }
 
-    public Task GetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public void GetOutputFormat(ImmutableArray<string> args)
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
         table.AddRow(_rootCommandHandler.OutputFormatter.Name, _rootCommandHandler.OutputFormatter.Description);
         AnsiConsole.Write(table);
-        return Task.CompletedTask;
     }
 
-    public Task SetOutputFormat(ImmutableArray<string> args, CancellationToken cancellationToken)
+    public void SetOutputFormat(ImmutableArray<string> args)
     {
         _rootCommandHandler.SetOutputFormatByName(args[0]);
-        return Task.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()

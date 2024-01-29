@@ -6,8 +6,20 @@ namespace QueryTerminal.Data;
 public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnection>
 {
     public SqlQueryTerminalDbConnection(IConfiguration configuration) : base(configuration) { }
+    
+    private new static IEnumerable<string> _keywordPatterns = new string[]{
+        @"\W(?<keyword>top)\W",           // TOP
+    };
+    private new static IEnumerable<string> _functionPatterns = new string[]{
+        @"\W(?<function>substring)\W",    // SUBSTRING
+        @"\W(?<function>len)\W",          // LEN
+        @"\W(?<function>string_agg)\W",   // STRING_AGG
+    };
 
-    public override async Task<IEnumerable<DbColumn>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
+    protected override IEnumerable<string> KeywordPatterns { get => _keywordPatterns.Concat(QueryTerminalDbConnection<SqlConnection>._keywordPatterns); }
+    protected override IEnumerable<string> FunctionPatterns { get => _functionPatterns.Concat(QueryTerminalDbConnection<SqlConnection>._functionPatterns); }
+
+    protected override async Task<IEnumerable<DbColumn>> FetchColumnsAsync(string tableName, CancellationToken cancellationToken)
     {
         var commandText = $"SELECT COLUMN_NAME,DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='{tableName}'";
         var command = _connection.CreateCommand();
@@ -24,7 +36,7 @@ public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnect
         return columns;
     }
 
-    public override async Task<IEnumerable<DbTable>> GetTablesAsync(CancellationToken cancellationToken)
+    protected override async Task<IEnumerable<DbTable>> FetchTablesAsync(CancellationToken cancellationToken)
     {
         var commandText = "SELECT TABLE_NAME,TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'";
         var command = _connection.CreateCommand();
