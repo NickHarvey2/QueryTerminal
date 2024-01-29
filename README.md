@@ -29,9 +29,6 @@ Options:
     - breakdown chart for spectre tables
 - REPL mode -- using PrettyPrompt
     - completion
-    - syntax highlighting
-    - soft returns
-    - command history
 - Spinner for longer queries
 - Scrolling for table output format if the result won't fit on the screen
 - Multiple named connections, allowing joins across connections
