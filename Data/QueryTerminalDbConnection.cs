@@ -45,14 +45,14 @@ public abstract class QueryTerminalDbConnection<TConnection> : IQueryTerminalDbC
         await CacheTablesAsync(cancellationToken);
         await CacheColumnsAsync(cancellationToken);
         _tablesRx = new Regex(
-            $@"({string.Join(")|(", _tables.Select(table => $@"\W(?<table>{table.Name})\W"))})",
+            $@"({string.Join(")|(", _tables.Select(table => $@"\W(?<table>{table.Name})(\W|$)"))})",
             RegexOptions.IgnoreCase
             | RegexOptions.CultureInvariant
             | RegexOptions.ExplicitCapture
             | RegexOptions.Compiled
         );
         _columnsRx = new Regex(
-            $@"({string.Join(")|(", _columns.Values.SelectMany(colSet => colSet.Select(col => $@"\W(?<column>{col.Name})\W")))})",
+            $@"({string.Join(")|(", _columns.Values.SelectMany(colSet => colSet.Select(col => $@"\W(?<column>{col.Name})(\W|$)")))})",
             RegexOptions.IgnoreCase
             | RegexOptions.CultureInvariant
             | RegexOptions.ExplicitCapture
