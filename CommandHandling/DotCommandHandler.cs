@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Microsoft.Extensions.DependencyInjection;
 using QueryTerminal.Data;
 using QueryTerminal.OutputFormatting;
 using Spectre.Console;
@@ -10,12 +9,14 @@ public class DotCommandHandler : IAsyncDisposable
 {
     private readonly RootCommandHandler _rootCommandHandler;
     private readonly IQueryTerminalDbConnection _connection;
+    private readonly IOutputFormats _outputFormats;
     private readonly IDictionary<string, Action<ImmutableArray<string>>> _dotCommands;
 
-    public DotCommandHandler(IServiceProvider serviceProvider)
+    public DotCommandHandler(RootCommandHandler rootCommandHandler, IQueryTerminalDbConnection connection, IOutputFormats outputFormats)
     {
-        _rootCommandHandler = serviceProvider.GetRequiredService<RootCommandHandler>();
-        _connection = serviceProvider.GetRequiredService<IQueryTerminalDbConnection>();
+        _rootCommandHandler = rootCommandHandler;
+        _connection = connection;
+        _outputFormats = outputFormats;
         _dotCommands = BuildDotCommands();
     }
 
@@ -83,7 +84,7 @@ public class DotCommandHandler : IAsyncDisposable
     {
         var table = new Table();
         table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
-        foreach (var outputFormat in OutputFormat.List())
+        foreach (var outputFormat in _outputFormats.List())
         {
             table.AddRow(outputFormat.Name, outputFormat.Description);
         }

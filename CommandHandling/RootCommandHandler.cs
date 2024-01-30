@@ -11,27 +11,24 @@ public class RootCommandHandler
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
-    private IOutputFormatter _outputFormatter;
+    private readonly IOutputFormats _outputFormats;
+    private string _outputFormat;
     private bool _terminate = false;
 
     public RootCommandHandler(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
-        SetOutputFormatByName(_configuration["outputFormat"]);
+        _outputFormat = configuration["outputFormat"];
+        _outputFormats = _serviceProvider.GetRequiredService<IOutputFormats>();
     }
 
     public void SetOutputFormatByName(string outputFormatName)
     {
-        var newOutputFormatter = OutputFormat.Get(outputFormatName);
-        if (newOutputFormatter is null)
-        {
-            throw new InvalidOperationException($"No output formatter found for key '{outputFormatName}'");
-        }
-        _outputFormatter = newOutputFormatter;
+        _outputFormat = outputFormatName;
     }
 
-    public IOutputFormatter OutputFormatter { get => _outputFormatter; }
+    public IOutputFormatter OutputFormatter { get => _outputFormats.Get(_outputFormat); }
 
     public void Terminate()
     {
@@ -70,7 +67,7 @@ public class RootCommandHandler
                     else
                     {
                         await using var reader = await connection.ExecuteQueryAsync(query, cancellationToken);
-                        _outputFormatter.WriteOutput(reader);
+                        _outputFormats.Get(_outputFormat).WriteOutput(reader);
                     }
                 }
                 catch (Exception e)
@@ -82,7 +79,7 @@ public class RootCommandHandler
         else
         {
             await using var reader = await connection.ExecuteQueryAsync(_configuration["query"], cancellationToken);
-            _outputFormatter.WriteOutput(reader);
+            _outputFormats.Get(_outputFormat).WriteOutput(reader);
         }
     }
 }

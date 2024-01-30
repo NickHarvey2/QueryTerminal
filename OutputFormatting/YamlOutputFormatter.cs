@@ -8,11 +8,13 @@ public class YamlOutputFormatter : IOutputFormatter
 {
     private readonly string _name;
     private readonly string _description;
+    private readonly IRenderer _renderer;
 
-    public YamlOutputFormatter(string name, string description)
+    public YamlOutputFormatter(IRenderer renderer, string name, string description)
     {
         _name = name;
         _description = description;
+        _renderer = renderer;
     }
 
     public string Name => _name;
@@ -32,7 +34,7 @@ public class YamlOutputFormatter : IOutputFormatter
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
         var yaml = serializer.Serialize(values);
-        Console.WriteLine(yaml);
+        _renderer.Render(yaml);
     }
 }
 

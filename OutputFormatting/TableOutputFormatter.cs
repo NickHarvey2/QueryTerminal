@@ -9,13 +9,15 @@ public class TableOutputFormatter : IOutputFormatter
     private readonly string _name;
     private readonly string _description;
     private readonly bool _includeHeaders;
+    private readonly IRenderer _renderer;
 
-    public TableOutputFormatter(string name, string description, string border = "square", bool includeHeaders = true)
+    public TableOutputFormatter(IRenderer renderer, string name, string description, string border = "square", bool includeHeaders = true)
     {
         _border = border;
         _name = name;
         _description = description;
         _includeHeaders = includeHeaders;
+        _renderer = renderer;
     }
 
     public string Name => _name;
@@ -64,7 +66,7 @@ public class TableOutputFormatter : IOutputFormatter
                 table.SquareBorder();
                 break;
         }
-        AnsiConsole.Write(table);
+        _renderer.Render(table);
     }
 }
 
