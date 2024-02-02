@@ -22,12 +22,12 @@ class Program
             serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(serviceProvider.GetRequiredService<IConfiguration>()["type"])
         );
 
-        services.AddTransient<DotCommandHandler>();
+        services.AddTransient<IDotCommands, DotCommands>();
 
         services.AddTransient<QueryTerminalPrompt>();
         services.AddTransient<QueryTerminalPromptCallbacks>();
 
-        services.AddTransient<IOutputFormats,OutputFormats>();
+        services.AddSingleton<IOutputFormats,OutputFormats>();
         services.AddTransient<IRenderer,Renderer>();
 
         services.AddSingleton<RootCommandHandler>();

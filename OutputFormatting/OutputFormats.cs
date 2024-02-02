@@ -1,12 +1,14 @@
 using System.Collections.Immutable;
+using Microsoft.Extensions.Configuration;
 
 namespace QueryTerminal.OutputFormatting;
 
 public class OutputFormats : IOutputFormats
 {
-    private readonly IDictionary<string, IOutputFormatter> _outputFormatters;
-    
-    public OutputFormats(IRenderer renderer)
+    private readonly IReadOnlyDictionary<string, IOutputFormatter> _outputFormatters;
+    private IOutputFormatter _current;
+
+    public OutputFormats(IRenderer renderer, IConfiguration configuration)
     {
         IOutputFormatter csv = new DelimitedOutputFormatter(
             renderer: renderer,
@@ -138,15 +140,27 @@ public class OutputFormats : IOutputFormats
                 KeyValuePair.Create(markdown.Name,     markdown    ),
             }
         );
+
+        SetCurrent(configuration["outputFormat"]);
     }
 
-    public IEnumerable<IOutputFormatter?> List()
+    public IEnumerable<IOutputFormatter> List()
     {
         return _outputFormatters.Values;
     }
 
-    public IOutputFormatter? Get(string outputFormatName)
+    public IOutputFormatter Get(string outputFormatName)
     {
         return _outputFormatters[outputFormatName];
+    }
+
+    public IOutputFormatter GetCurrent()
+    {
+        return _current;
+    }
+
+    public void SetCurrent(string outputFormatName)
+    {
+        _current = _outputFormatters[outputFormatName];
     }
 }
