@@ -141,34 +141,21 @@ public class OutputFormats : IOutputFormats
             }
         );
 
-        SetCurrent(configuration["outputFormat"]);
+        _current = _outputFormatters[configuration["outputFormat"]];
     }
 
-    public IEnumerable<IOutputFormatter> List()
-    {
-        return _outputFormatters.Values;
-    }
+    public IEnumerable<IOutputFormatter> List { get => _outputFormatters.Values; }
 
-    public IOutputFormatter Get(string outputFormatName)
+    public IOutputFormatter Current { get => _current; set { _current = value; } }
+
+    public IOutputFormatter this[string outputFormatName]
     {
-        if (!_outputFormatters.ContainsKey(outputFormatName))
-        {
-            throw new ArgumentException($"Output Format Not Found: {outputFormatName}");
+        get {
+            if (!_outputFormatters.ContainsKey(outputFormatName))
+            {
+                throw new ArgumentException($"Output Format Not Found: {outputFormatName}");
+            }
+            return _outputFormatters[outputFormatName];
         }
-        return _outputFormatters[outputFormatName];
-    }
-
-    public IOutputFormatter GetCurrent()
-    {
-        return _current;
-    }
-
-    public void SetCurrent(string outputFormatName)
-    {
-        if (!_outputFormatters.ContainsKey(outputFormatName))
-        {
-            throw new ArgumentException($"Output Format Not Found: {outputFormatName}");
-        }
-        _current = _outputFormatters[outputFormatName];
     }
 }

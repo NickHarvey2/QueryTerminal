@@ -2,8 +2,7 @@ namespace QueryTerminal.OutputFormatting;
 
 public interface IOutputFormats
 {
-    IEnumerable<IOutputFormatter?> List();
-    IOutputFormatter? Get(string outputFormatName);
-    IOutputFormatter GetCurrent();
-    void SetCurrent(string outputFormatName);
+    IEnumerable<IOutputFormatter> List { get; }
+    IOutputFormatter Current { get; set; }
+    IOutputFormatter this[string outputFormatName] { get; }
 }

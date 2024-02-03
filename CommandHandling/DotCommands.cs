@@ -68,7 +68,7 @@ public class DotCommands : IDotCommands, IAsyncDisposable
             {
                 var table = new Table();
                 table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
-                foreach (var outputFormat in _outputFormats.List())
+                foreach (var outputFormat in _outputFormats.List)
                 {
                     table.AddRow(outputFormat.Name, outputFormat.Description);
                 }
@@ -84,7 +84,7 @@ public class DotCommands : IDotCommands, IAsyncDisposable
             {
                 var table = new Table();
                 table.AddColumns($"[bold blue]Format[/]", "[bold blue]Description[/]");
-                table.AddRow(_outputFormats.GetCurrent().Name, _outputFormats.GetCurrent().Description);
+                table.AddRow(_outputFormats.Current.Name, _outputFormats.Current.Description);
                 AnsiConsole.Write(table);
                 return false;
             }
@@ -95,7 +95,7 @@ public class DotCommands : IDotCommands, IAsyncDisposable
             description: "Get the currently set output format",
             command: args =>
             {
-                _outputFormats.SetCurrent(args[0]);
+                _outputFormats.Current = _outputFormats[args[0]];
                 return false;
             }
         );

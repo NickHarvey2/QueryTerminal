@@ -60,7 +60,7 @@ public class RootCommandHandler
                     else
                     {
                         await using var reader = await connection.ExecuteQueryAsync(query, cancellationToken);
-                        _outputFormats.GetCurrent().WriteOutput(reader);
+                        _outputFormats.Current.WriteOutput(reader);
                     }
                 }
                 catch (Exception e)
@@ -72,7 +72,7 @@ public class RootCommandHandler
         else
         {
             await using var reader = await connection.ExecuteQueryAsync(_configuration["query"], cancellationToken);
-            _outputFormats.GetCurrent().WriteOutput(reader);
+            _outputFormats.Current.WriteOutput(reader);
         }
     }
 }
