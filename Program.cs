@@ -5,6 +5,7 @@ using Spectre.Console;
 using QueryTerminal.Data;
 using QueryTerminal.Prompting;
 using Microsoft.Extensions.Configuration;
+using QueryTerminal.OutputFormatting;
 
 namespace QueryTerminal;
 
@@ -17,12 +18,17 @@ class Program
 
         services.AddKeyedTransient<IQueryTerminalDbConnection, SqlQueryTerminalDbConnection>("mssql");
         services.AddKeyedTransient<IQueryTerminalDbConnection, SqliteQueryTerminalDbConnection>("sqlite");
-        services.AddTransient<IQueryTerminalDbConnection>(serviceProvider => serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(serviceProvider.GetRequiredService<IConfiguration>()["type"]));
+        services.AddTransient<IQueryTerminalDbConnection>(serviceProvider => 
+            serviceProvider.GetRequiredKeyedService<IQueryTerminalDbConnection>(serviceProvider.GetRequiredService<IConfiguration>()["type"])
+        );
 
-        services.AddTransient<DotCommandHandler>();
+        services.AddTransient<IDotCommands, DotCommands>();
 
         services.AddTransient<QueryTerminalPrompt>();
         services.AddTransient<QueryTerminalPromptCallbacks>();
+
+        services.AddSingleton<IOutputFormats,OutputFormats>();
+        services.AddTransient<IRenderer,Renderer>();
 
         services.AddSingleton<RootCommandHandler>();
 

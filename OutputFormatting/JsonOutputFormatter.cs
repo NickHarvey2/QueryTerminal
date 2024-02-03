@@ -11,8 +11,9 @@ public class JsonOutputFormatter : IOutputFormatter
     private readonly JsonSerializerOptions _jsonSerializerOptions;
     private readonly string _name;
     private readonly string _description;
+    private readonly IRenderer _renderer;
 
-    public JsonOutputFormatter(string name, string description, bool pretty = false)
+    public JsonOutputFormatter(IRenderer renderer, string name, string description, bool pretty = false)
     {
         _pretty = pretty;
         _jsonSerializerOptions = new JsonSerializerOptions {
@@ -22,6 +23,7 @@ public class JsonOutputFormatter : IOutputFormatter
         _jsonSerializerOptions.Converters.Add(new DBNullJsonConverter());
         _name = name;
         _description = description;
+        _renderer = renderer;
     }
 
     public string Name => _name;
@@ -40,12 +42,11 @@ public class JsonOutputFormatter : IOutputFormatter
         var json = JsonSerializer.Serialize(values, typeof(List<Dictionary<string,object>>), _jsonSerializerOptions);
         if (_pretty)
         {
-            AnsiConsole.Write(new JsonText(json));
-            AnsiConsole.WriteLine();
+            _renderer.Render(new JsonText(json));
         }
         else
         {
-            Console.WriteLine(json);
+            _renderer.Render(json);
         }
     }
 }
