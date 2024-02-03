@@ -55,7 +55,7 @@ public class RootCommandHandler
                     if (query.StartsWith("."))
                     {
                         var tokens = query.Split(' ');
-                        _terminate = dotCommands.Get(tokens.First()).Invoke(tokens.Skip(1).ToArray());
+                        _terminate = dotCommands[tokens.First()].Invoke(tokens.Skip(1).ToArray());
                     }
                     else
                     {

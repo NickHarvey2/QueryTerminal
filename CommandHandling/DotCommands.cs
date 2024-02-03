@@ -118,18 +118,17 @@ public class DotCommands : IDotCommands, IAsyncDisposable
         await _connection.OpenAsync(cancellationToken);
     }
 
-    public IEnumerable<IDotCommand> List()
-    {
-        return _commands.Values;
-    }
+    public IEnumerable<IDotCommand> List => _commands.Values;
 
-    public IDotCommand Get(string commandName)
+    public IDotCommand this[string commandName]
     {
-        if (!_commands.ContainsKey(commandName))
-        {
-            throw new ArgumentException($"Command Not Found: {commandName}");
+        get {
+            if (!_commands.ContainsKey(commandName))
+            {
+                throw new ArgumentException($"Command Not Found: {commandName}");
+            }
+            return _commands[commandName];
         }
-        return _commands[commandName];
     }
 
     public async ValueTask DisposeAsync()
