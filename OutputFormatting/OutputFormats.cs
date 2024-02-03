@@ -151,6 +151,10 @@ public class OutputFormats : IOutputFormats
 
     public IOutputFormatter Get(string outputFormatName)
     {
+        if (!_outputFormatters.ContainsKey(outputFormatName))
+        {
+            throw new ArgumentException($"Output Format Not Found: {outputFormatName}");
+        }
         return _outputFormatters[outputFormatName];
     }
 
@@ -161,6 +165,10 @@ public class OutputFormats : IOutputFormats
 
     public void SetCurrent(string outputFormatName)
     {
+        if (!_outputFormatters.ContainsKey(outputFormatName))
+        {
+            throw new ArgumentException($"Output Format Not Found: {outputFormatName}");
+        }
         _current = _outputFormatters[outputFormatName];
     }
 }
