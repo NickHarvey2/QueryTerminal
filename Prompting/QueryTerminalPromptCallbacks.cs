@@ -5,14 +5,18 @@ using PrettyPrompt.Completion;
 using PrettyPrompt.Consoles;
 using PrettyPrompt.Documents;
 using PrettyPrompt.Highlighting;
+using QueryTerminal.CommandHandling;
 using QueryTerminal.Data;
+using QueryTerminal.OutputFormatting;
 
 namespace QueryTerminal.Prompting;
 
 public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 {
     private readonly IQueryTerminalDbConnection _connection;
-
+    private readonly IDotCommands _dotCommands;
+    private readonly IOutputFormats _outputFormats;
+    // private readonly StreamWriter _fileStream;
     private readonly static AnsiColor _keywordColor        = AnsiColor.Magenta;
     private readonly static AnsiColor _numericLiteralColor = AnsiColor.Rgb(255,177,0);
     private readonly static AnsiColor _stringLiteralColor  = AnsiColor.Green;
@@ -28,8 +32,6 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         | RegexOptions.Compiled
     );
 
-    int a = 3;
-
     private readonly static Regex _numericLiteralRx = new Regex(
         @"(?<!')\b(?<num_literal>\d+)\b(?!')",
         RegexOptions.IgnoreCase
@@ -38,9 +40,12 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         | RegexOptions.Compiled
     );
 
-    public QueryTerminalPromptCallbacks(IQueryTerminalDbConnection connection)
+    public QueryTerminalPromptCallbacks(IQueryTerminalDbConnection connection, IDotCommands dotCommands, IOutputFormats outputFormats)
     {
         _connection = connection;
+        _dotCommands = dotCommands;
+        _outputFormats = outputFormats;
+        // _fileStream = new StreamWriter(File.Create("debug.log"));
     }
 
     public async Task OpenAsync(CancellationToken cancellationToken)
@@ -60,10 +65,35 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         });
     }
 
-    protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
+    protected override async Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
     {
-        var typedWord = text.AsSpan(spanToBeReplaced.Start, spanToBeReplaced.Length).ToString();
-        return Task.FromResult<IReadOnlyList<CompletionItem>>(Enumerable.Empty<CompletionItem>().ToImmutableList());
+        // await _fileStream.WriteLineAsync($"{text}|{caret}|{spanToBeReplaced.Start}|{spanToBeReplaced.End}|{spanToBeReplaced.ToString()}");
+        // await _fileStream.FlushAsync();
+        // var typedWord = text.AsSpan(spanToBeReplaced.Start, spanToBeReplaced.Length).ToString();
+        if (text == ".")
+        {
+            return _dotCommands.List.Select(dotCommand => new CompletionItem(
+                replacementText: dotCommand.Name.Substring(1),
+                displayText: dotCommand.Name,
+                getExtendedDescription: _ => Task.FromResult(new FormattedString(dotCommand.Description))
+            )).ToImmutableList();
+        }
+        if (text.Length >= 12 && text.Substring(0,12) == ".listColumns")
+        {
+            return _connection.GetTables().Select(table => new CompletionItem(
+                replacementText: table.Name,
+                displayText: table.Name
+            )).ToImmutableList();
+        }
+        if (text.Length >= 16 && text.Substring(0,16) == ".setOutputFormat")
+        {
+            return _outputFormats.List.Select(outputFormat => new CompletionItem(
+                replacementText: outputFormat.Name,
+                displayText: outputFormat.Name,
+                getExtendedDescription: _ => Task.FromResult(new FormattedString(outputFormat.Description))
+            )).ToImmutableList();
+        }
+        return Enumerable.Empty<CompletionItem>().ToImmutableList();
     }
 
     protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
@@ -71,7 +101,9 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         // Depending on if I find I need it, memoization might be useful to optimize this
         // because the vast majority of changes to `text` are going to be by a single character, often at the end of the string
         // so if we cache the results and only recalculate the FormatSpans that intersect a changed region, that will save us some
-        // operations
+        // operations -- then a again, regex, especially compiled, is probably one of the most thoroughly optimized things
+        // in any given language, so probably unnecessary as long as highlights are regex based, so a memoization implementation
+        // could actually make performance _worse_
         var functionFormatSpans = _connection.FunctionsRx.Matches(text).Select(match => {
             var function = match.Groups["function"];
             return new FormatSpan(function.Index, function.Length, _functionColor);
