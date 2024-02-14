@@ -14,6 +14,8 @@ public class SqlQueryTerminalDbConnection : QueryTerminalDbConnection<SqlConnect
         @"\W(?<function>substring)\W",    // SUBSTRING
         @"\W(?<function>len)\W",          // LEN
         @"\W(?<function>string_agg)\W",   // STRING_AGG
+        @"\W(?<function>getdate)\W",      // GETDATE
+        @"\W(?<function>dateadd)\W",      // DATEADD
     };
 
     protected override IEnumerable<string> KeywordPatterns { get => _keywordPatterns.Concat(QueryTerminalDbConnection<SqlConnection>._keywordPatterns); }

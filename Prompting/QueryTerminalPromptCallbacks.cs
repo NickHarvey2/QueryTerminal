@@ -16,7 +16,7 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
     private readonly IQueryTerminalDbConnection _connection;
     private readonly IDotCommands _dotCommands;
     private readonly IOutputFormats _outputFormats;
-    // private readonly StreamWriter _fileStream;
+    private readonly StreamWriter _fileStream;
     private readonly static AnsiColor _keywordColor        = AnsiColor.Magenta;
     private readonly static AnsiColor _numericLiteralColor = AnsiColor.Rgb(255,177,0);
     private readonly static AnsiColor _stringLiteralColor  = AnsiColor.Green;
@@ -33,7 +33,7 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
     );
 
     private readonly static Regex _numericLiteralRx = new Regex(
-        @"(?<!')\b(?<num_literal>\d+)\b(?!')",
+        @"(?<!')\b(?<num_literal>\d+(\.\d+)?)\b(?!')",
         RegexOptions.IgnoreCase
         | RegexOptions.CultureInvariant
         | RegexOptions.ExplicitCapture
@@ -45,7 +45,7 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         _connection = connection;
         _dotCommands = dotCommands;
         _outputFormats = outputFormats;
-        // _fileStream = new StreamWriter(File.Create("debug.log"));
+        _fileStream = new StreamWriter(File.Create("debug.log"));
     }
 
     public async Task OpenAsync(CancellationToken cancellationToken)
@@ -67,32 +67,41 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
 
     protected override async Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
     {
-        // await _fileStream.WriteLineAsync($"{text}|{caret}|{spanToBeReplaced.Start}|{spanToBeReplaced.End}|{spanToBeReplaced.ToString()}");
-        // await _fileStream.FlushAsync();
+        await _fileStream.WriteLineAsync($"{text}|{caret}|{spanToBeReplaced.Start}|{spanToBeReplaced.End}|{spanToBeReplaced.ToString()}");
+        await _fileStream.FlushAsync();
         // var typedWord = text.AsSpan(spanToBeReplaced.Start, spanToBeReplaced.Length).ToString();
-        if (text == ".")
+
+        // First, handle any dot commands
+        if (text.Length > 0 && text[0] == '.')
         {
-            return _dotCommands.List.Select(dotCommand => new CompletionItem(
-                replacementText: dotCommand.Name.Substring(1),
-                displayText: dotCommand.Name,
-                getExtendedDescription: _ => Task.FromResult(new FormattedString(dotCommand.Description))
-            )).ToImmutableList();
+            if (text.Length == 1)
+            {
+                return _dotCommands.List.Select(dotCommand => new CompletionItem(
+                    replacementText: dotCommand.Name.Substring(1),
+                    displayText: dotCommand.Name,
+                    getExtendedDescription: _ => Task.FromResult(new FormattedString(dotCommand.Description))
+                )).ToImmutableList();
+            }
+            if (text.Length >= 12 && text.Substring(0,12) == ".listColumns")
+            {
+                return _connection.GetTables().Select(table => new CompletionItem(
+                    replacementText: table.Name,
+                    displayText: table.Name
+                )).ToImmutableList();
+            }
+            if (text.Length >= 16 && text.Substring(0,16) == ".setOutputFormat")
+            {
+                return _outputFormats.List.Select(outputFormat => new CompletionItem(
+                    replacementText: outputFormat.Name,
+                    displayText: outputFormat.Name,
+                    getExtendedDescription: _ => Task.FromResult(new FormattedString(outputFormat.Description))
+                )).ToImmutableList();
+            }
         }
-        if (text.Length >= 12 && text.Substring(0,12) == ".listColumns")
-        {
-            return _connection.GetTables().Select(table => new CompletionItem(
-                replacementText: table.Name,
-                displayText: table.Name
-            )).ToImmutableList();
-        }
-        if (text.Length >= 16 && text.Substring(0,16) == ".setOutputFormat")
-        {
-            return _outputFormats.List.Select(outputFormat => new CompletionItem(
-                replacementText: outputFormat.Name,
-                displayText: outputFormat.Name,
-                getExtendedDescription: _ => Task.FromResult(new FormattedString(outputFormat.Description))
-            )).ToImmutableList();
-        }
+
+        // TODO Next, handle completions for keywords, tables, columns, and functions
+
+        // Finally, if no other cases, return an empty list (completion menu will not appear)
         return Enumerable.Empty<CompletionItem>().ToImmutableList();
     }
 
@@ -104,35 +113,35 @@ public class QueryTerminalPromptCallbacks : PromptCallbacks, IAsyncDisposable
         // operations -- then a again, regex, especially compiled, is probably one of the most thoroughly optimized things
         // in any given language, so probably unnecessary as long as highlights are regex based, so a memoization implementation
         // could actually make performance _worse_
-        var functionFormatSpans = _connection.FunctionsRx.Matches(text).Select(match => {
-            var function = match.Groups["function"];
-            return new FormatSpan(function.Index, function.Length, _functionColor);
-        });
-
-        var keywordFormatSpans = _connection.KeywordsRx.Matches(text).Select(match => {
-            var keyword = match.Groups["keyword"];
-            return new FormatSpan(keyword.Index, keyword.Length, _keywordColor);
-        });
-
-        var numericLiteralFormatSpans = _numericLiteralRx.Matches(text).Select(match => {
-            var keyword = match.Groups["num_literal"];
-            return new FormatSpan(keyword.Index, keyword.Length, _numericLiteralColor);
-        });
-
         var stringLiteralFormatSpans = _stringLiteralRx.Matches(text).Select(match => {
             var keyword = match.Groups["string_literal"];
             return new FormatSpan(keyword.Index, keyword.Length, _stringLiteralColor);
         });
 
+        var functionFormatSpans = _connection.FunctionsRx.Matches(text).Select(match => {
+            var function = match.Groups["function"];
+            return new FormatSpan(function.Index, function.Length, _functionColor);
+        }).Where(formatSpan => !stringLiteralFormatSpans.Any(stringLiteralFormatSpan => stringLiteralFormatSpan.OverlapsWith(formatSpan.Span)));
+
+        var keywordFormatSpans = _connection.KeywordsRx.Matches(text).Select(match => {
+            var keyword = match.Groups["keyword"];
+            return new FormatSpan(keyword.Index, keyword.Length, _keywordColor);
+        }).Where(formatSpan => !stringLiteralFormatSpans.Any(stringLiteralFormatSpan => stringLiteralFormatSpan.OverlapsWith(formatSpan.Span)));
+
+        var numericLiteralFormatSpans = _numericLiteralRx.Matches(text).Select(match => {
+            var keyword = match.Groups["num_literal"];
+            return new FormatSpan(keyword.Index, keyword.Length, _numericLiteralColor);
+        }).Where(formatSpan => !stringLiteralFormatSpans.Any(stringLiteralFormatSpan => stringLiteralFormatSpan.OverlapsWith(formatSpan.Span)));
+
         var tableFormatSpans = _connection.TablesRx?.Matches(text).Select(match => {
             var function = match.Groups["table"];
             return new FormatSpan(function.Index, function.Length, _tableColor);
-        }) ?? Enumerable.Empty<FormatSpan>();
+        }).Where(formatSpan => !stringLiteralFormatSpans.Any(stringLiteralFormatSpan => stringLiteralFormatSpan.OverlapsWith(formatSpan.Span))) ?? Enumerable.Empty<FormatSpan>();
 
         var columnFormatSpans = _connection.ColumnsRx?.Matches(text).Select(match => {
             var function = match.Groups["column"];
             return new FormatSpan(function.Index, function.Length, _columnColor);
-        }) ?? Enumerable.Empty<FormatSpan>();
+        }).Where(formatSpan => !stringLiteralFormatSpans.Any(stringLiteralFormatSpan => stringLiteralFormatSpan.OverlapsWith(formatSpan.Span))) ?? Enumerable.Empty<FormatSpan>();
 
         return Task.FromResult<IReadOnlyCollection<FormatSpan>>(
             keywordFormatSpans
