@@ -7,7 +7,7 @@ using Spectre.Console;
 
 namespace QueryTerminal.CommandHandling;
 
-public class RootCommandHandler
+public class RootCommandHandler // TODO should this implement IAsyncDisposable, and just get the dependencies in the constructor, instead of keeping a reference to the service provider?
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
