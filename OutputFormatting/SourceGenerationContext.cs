@@ -9,6 +9,7 @@ namespace QueryTerminal.OutputFormatting;
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(System.Int64))]
 [JsonSerializable(typeof(System.DBNull))]
+[JsonSerializable(typeof(System.DateTime))]
 internal partial class SourceGenerationContext : JsonSerializerContext
 {
 }
